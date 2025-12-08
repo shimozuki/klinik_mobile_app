@@ -1,0 +1,789 @@
+import 'package:flutter/material.dart';
+import 'package:klinik/content/BookingContent.dart';
+import 'dart:ui';
+
+import 'package:klinik/models/AppointmentModel.dart';
+import 'package:klinik/service/AppointmentRepository.dart';
+
+class AppointmentPage extends StatefulWidget {
+  const AppointmentPage({Key? key}) : super(key: key);
+
+  @override
+  State<AppointmentPage> createState() => _AppointmentPageState();
+}
+
+class _AppointmentPageState extends State<AppointmentPage>
+    with SingleTickerProviderStateMixin {
+  late TabController _tabController;
+  int _selectedTab = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 3, vsync: this);
+    _tabController.addListener(() {
+      setState(() => _selectedTab = _tabController.index);
+    });
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFFF8FAFC),
+      body: SafeArea(
+        child: Column(
+          children: [
+            // Modern Header with Gradient
+            Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [const Color(0xFF4A90E2), const Color(0xFF50C9C3)],
+                ),
+              ),
+              child: Column(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(24, 20, 24, 24),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Jadwal & Booking',
+                                  style: TextStyle(
+                                    fontSize: 28,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.white,
+                                    letterSpacing: -0.5,
+                                  ),
+                                ),
+                                const SizedBox(height: 6),
+                                Text(
+                                  'Kelola jadwal kunjungan Anda',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: Colors.white.withOpacity(0.85),
+                                    fontWeight: FontWeight.w400,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            Container(
+                              padding: const EdgeInsets.all(14),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withOpacity(0.2),
+                                borderRadius: BorderRadius.circular(16),
+                                border: Border.all(
+                                  color: Colors.white.withOpacity(0.3),
+                                  width: 1,
+                                ),
+                              ),
+                              child: Icon(
+                                Icons.calendar_month_rounded,
+                                color: Colors.white,
+                                size: 26,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 24),
+                        // Modern Tab Selector
+                        _buildModernTabs(),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            // Content
+            Expanded(
+              child: TabBarView(
+                controller: _tabController,
+                children: const [
+                  UpcomingAppointments(),
+                  CompletedAppointments(),
+                  CancelledAppointments(),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+      floatingActionButton: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFF4A90E2).withOpacity(0.4),
+              blurRadius: 20,
+              offset: const Offset(0, 8),
+            ),
+          ],
+        ),
+        child: FloatingActionButton.extended(
+          onPressed: () => _showBookingDialog(context),
+          backgroundColor: const Color(0xFF4A90E2),
+          elevation: 0,
+          icon: const Icon(Icons.add_rounded, color: Colors.white, size: 24),
+          label: const Text(
+            'Booking Baru',
+            style: TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.w600,
+              fontSize: 15,
+              letterSpacing: 0.2,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildModernTabs() {
+    return Container(
+      height: 48,
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.15),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: Colors.white.withOpacity(0.2), width: 1),
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(14),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+          child: Row(
+            children: [
+              _buildTabItem('Mendatang', 0),
+              _buildTabItem('Selesai', 1),
+              _buildTabItem('Dibatalkan', 2),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTabItem(String title, int index) {
+    final isSelected = _selectedTab == index;
+    return Expanded(
+      child: GestureDetector(
+        onTap: () {
+          _tabController.animateTo(index);
+        },
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          margin: const EdgeInsets.all(4),
+          decoration: BoxDecoration(
+            color: isSelected ? Colors.white : Colors.transparent,
+            borderRadius: BorderRadius.circular(10),
+            boxShadow:
+                isSelected
+                    ? [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.1),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ]
+                    : [],
+          ),
+          child: Center(
+            child: Text(
+              title,
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                color:
+                    isSelected
+                        ? const Color(0xFF4A90E2)
+                        : Colors.white.withOpacity(0.9),
+                letterSpacing: 0.2,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showBookingDialog(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => const BookingBottomSheet(),
+    );
+  }
+}
+
+// ============= UPCOMING APPOINTMENTS =============
+class UpcomingAppointments extends StatelessWidget {
+  const UpcomingAppointments({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    final upcomingAppointments = AppointmentData.upcomingAppointments;
+
+    if (upcomingAppointments.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(32),
+              decoration: BoxDecoration(
+                color: Colors.grey[100],
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                Icons.calendar_today_rounded,
+                size: 64,
+                color: Colors.grey[300],
+              ),
+            ),
+            const SizedBox(height: 24),
+            Text(
+              'Belum ada jadwal mendatang',
+              style: TextStyle(
+                fontSize: 18,
+                color: Colors.grey[600],
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Buat booking baru untuk memulai',
+              style: TextStyle(fontSize: 14, color: Colors.grey[500]),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return ListView.builder(
+      padding: const EdgeInsets.all(20),
+      itemCount: upcomingAppointments.length,
+      itemBuilder: (context, index) {
+        final appointment = upcomingAppointments[index];
+        return AppointmentCard(appointment: appointment);
+      },
+    );
+  }
+}
+
+// ============= COMPLETED APPOINTMENTS =============
+class CompletedAppointments extends StatelessWidget {
+  const CompletedAppointments({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    final completedAppointments = AppointmentData.completedAppointments;
+
+    return ListView.builder(
+      padding: const EdgeInsets.all(20),
+      itemCount: completedAppointments.length,
+      itemBuilder: (context, index) {
+        final appointment = completedAppointments[index];
+        return AppointmentCard(appointment: appointment);
+      },
+    );
+  }
+}
+
+// ============= CANCELLED APPOINTMENTS =============
+class CancelledAppointments extends StatelessWidget {
+  const CancelledAppointments({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    final cancelledAppointments = AppointmentData.cancelledAppointments;
+
+    return ListView.builder(
+      padding: const EdgeInsets.all(20),
+      itemCount: cancelledAppointments.length,
+      itemBuilder: (context, index) {
+        final appointment = cancelledAppointments[index];
+        return AppointmentCard(appointment: appointment);
+      },
+    );
+  }
+}
+
+// ============= MODERN APPOINTMENT CARD =============
+class AppointmentCard extends StatelessWidget {
+  final Appointment appointment;
+
+  const AppointmentCard({Key? key, required this.appointment})
+    : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 20,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              children: [
+                Row(
+                  children: [
+                    // Modern Doctor Avatar
+                    Container(
+                      width: 68,
+                      height: 68,
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [
+                            const Color(0xFF4A90E2),
+                            const Color(0xFF50C9C3),
+                          ],
+                        ),
+                        borderRadius: BorderRadius.circular(18),
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(0xFF4A90E2).withOpacity(0.3),
+                            blurRadius: 12,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: const Icon(
+                        Icons.person_rounded,
+                        color: Colors.white,
+                        size: 34,
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    // Doctor Info
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            appointment.doctorName,
+                            style: const TextStyle(
+                              fontSize: 17,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF1A202C),
+                              letterSpacing: -0.3,
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            appointment.specialty,
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.grey[600],
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+                          _buildModernStatusBadge(appointment.status),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 18),
+                // Appointment Details Card
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        const Color(0xFFF7FAFC),
+                        const Color(0xFFEDF2F7),
+                      ],
+                    ),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: Colors.grey[200]!, width: 1),
+                  ),
+                  child: Column(
+                    children: [
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Icon(
+                              Icons.medical_services_rounded,
+                              size: 18,
+                              color: const Color(0xFF4A90E2),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Text(
+                            appointment.serviceType,
+                            style: const TextStyle(
+                              fontSize: 14,
+                              color: Color(0xFF2D3748),
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 14),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  child: Icon(
+                                    Icons.calendar_today_rounded,
+                                    size: 16,
+                                    color: Colors.grey[700],
+                                  ),
+                                ),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: Text(
+                                    appointment.date,
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      color: Colors.grey[700],
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  child: Icon(
+                                    Icons.access_time_rounded,
+                                    size: 16,
+                                    color: Colors.grey[700],
+                                  ),
+                                ),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: Text(
+                                    appointment.time,
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      color: Colors.grey[700],
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          // Modern Action Buttons
+          if (appointment.status == 'confirmed' ||
+              appointment.status == 'pending')
+            Container(
+              decoration: BoxDecoration(
+                border: Border(
+                  top: BorderSide(color: Colors.grey[100]!, width: 1),
+                ),
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        onTap: () {},
+                        borderRadius: const BorderRadius.only(
+                          bottomLeft: Radius.circular(20),
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 18),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.chat_bubble_rounded,
+                                size: 20,
+                                color: const Color(0xFF4A90E2),
+                              ),
+                              const SizedBox(width: 8),
+                              const Text(
+                                'Chat',
+                                style: TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w600,
+                                  color: Color(0xFF4A90E2),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  Container(width: 1, height: 50, color: Colors.grey[100]),
+                  Expanded(
+                    child: Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        onTap: () => _showCancelDialog(context),
+                        borderRadius: const BorderRadius.only(
+                          bottomRight: Radius.circular(20),
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 18),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.cancel_rounded,
+                                size: 20,
+                                color: Colors.red[400],
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                'Batalkan',
+                                style: TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.red[400],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          if (appointment.status == 'completed')
+            Container(
+              decoration: BoxDecoration(
+                border: Border(
+                  top: BorderSide(color: Colors.grey[100]!, width: 1),
+                ),
+              ),
+              child: Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: () {},
+                  borderRadius: const BorderRadius.only(
+                    bottomLeft: Radius.circular(20),
+                    bottomRight: Radius.circular(20),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 18),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.star_rounded,
+                          size: 20,
+                          color: Colors.amber[600],
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Beri Ulasan',
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                            color: const Color(0xFF4A90E2),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildModernStatusBadge(String status) {
+    Color backgroundColor;
+    Color textColor;
+    String text;
+    IconData icon;
+
+    switch (status) {
+      case 'confirmed':
+        backgroundColor = const Color(0xFFD1FAE5);
+        textColor = const Color(0xFF065F46);
+        text = 'Dikonfirmasi';
+        icon = Icons.check_circle_rounded;
+        break;
+      case 'pending':
+        backgroundColor = const Color(0xFFFEF3C7);
+        textColor = const Color(0xFF92400E);
+        text = 'Menunggu';
+        icon = Icons.schedule_rounded;
+        break;
+      case 'completed':
+        backgroundColor = const Color(0xFFDBEAFE);
+        textColor = const Color(0xFF1E40AF);
+        text = 'Selesai';
+        icon = Icons.check_circle_outline_rounded;
+        break;
+      case 'cancelled':
+        backgroundColor = const Color(0xFFFEE2E2);
+        textColor = const Color(0xFF991B1B);
+        text = 'Dibatalkan';
+        icon = Icons.cancel_rounded;
+        break;
+      default:
+        backgroundColor = const Color(0xFFF3F4F6);
+        textColor = const Color(0xFF6B7280);
+        text = status;
+        icon = Icons.info_rounded;
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+      decoration: BoxDecoration(
+        color: backgroundColor,
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 14, color: textColor),
+          const SizedBox(width: 6),
+          Text(
+            text,
+            style: TextStyle(
+              color: textColor,
+              fontSize: 12,
+              fontWeight: FontWeight.bold,
+              letterSpacing: 0.3,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showCancelDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder:
+          (context) => AlertDialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+            ),
+            title: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: Colors.red[50],
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(Icons.warning_rounded, color: Colors.red[400]),
+                ),
+                const SizedBox(width: 12),
+                const Text(
+                  'Batalkan Jadwal',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+              ],
+            ),
+            content: const Text(
+              'Apakah Anda yakin ingin membatalkan jadwal ini? Tindakan ini tidak dapat dibatalkan.',
+              style: TextStyle(fontSize: 14, height: 1.5),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: Text(
+                  'Tidak',
+                  style: TextStyle(
+                    color: Colors.grey[600],
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: const Text('Jadwal berhasil dibatalkan'),
+                      backgroundColor: Colors.orange[600],
+                      behavior: SnackBarBehavior.floating,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                  );
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.red[400],
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  elevation: 0,
+                ),
+                child: const Text(
+                  'Ya, Batalkan',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ],
+          ),
+    );
+  }
+}
