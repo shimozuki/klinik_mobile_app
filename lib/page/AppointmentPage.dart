@@ -3,7 +3,9 @@ import 'package:klinik/content/BookingContent.dart';
 import 'dart:ui';
 
 import 'package:klinik/models/AppointmentModel.dart';
+import 'package:klinik/page/RekamMedisPage.dart';
 import 'package:klinik/service/AppointmentRepository.dart';
+import 'package:klinik/service/RekamMedisRepository.dart';
 
 class AppointmentPage extends StatefulWidget {
   const AppointmentPage({Key? key}) : super(key: key);
@@ -16,6 +18,8 @@ class _AppointmentPageState extends State<AppointmentPage>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
   int _selectedTab = 0;
+
+  final records = RekamMedisRepository().getAllMedicalRecords();
 
   @override
   void initState() {
@@ -112,9 +116,9 @@ class _AppointmentPageState extends State<AppointmentPage>
             Expanded(
               child: TabBarView(
                 controller: _tabController,
-                children: const [
-                  UpcomingAppointments(),
-                  CompletedAppointments(),
+                children: [
+                  UpcomingAppointments(records: records),
+                  CompletedAppointments(records: records),
                   CancelledAppointments(),
                 ],
               ),
@@ -231,54 +235,21 @@ class _AppointmentPageState extends State<AppointmentPage>
 
 // ============= UPCOMING APPOINTMENTS =============
 class UpcomingAppointments extends StatelessWidget {
-  const UpcomingAppointments({Key? key}) : super(key: key);
+  final List records;
+
+  const UpcomingAppointments({Key? key, required this.records})
+    : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     final upcomingAppointments = AppointmentData.upcomingAppointments;
-
-    if (upcomingAppointments.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(32),
-              decoration: BoxDecoration(
-                color: Colors.grey[100],
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                Icons.calendar_today_rounded,
-                size: 64,
-                color: Colors.grey[300],
-              ),
-            ),
-            const SizedBox(height: 24),
-            Text(
-              'Belum ada jadwal mendatang',
-              style: TextStyle(
-                fontSize: 18,
-                color: Colors.grey[600],
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Buat booking baru untuk memulai',
-              style: TextStyle(fontSize: 14, color: Colors.grey[500]),
-            ),
-          ],
-        ),
-      );
-    }
 
     return ListView.builder(
       padding: const EdgeInsets.all(20),
       itemCount: upcomingAppointments.length,
       itemBuilder: (context, index) {
         final appointment = upcomingAppointments[index];
-        return AppointmentCard(appointment: appointment);
+        return AppointmentCard(appointment: appointment, records: records);
       },
     );
   }
@@ -286,7 +257,10 @@ class UpcomingAppointments extends StatelessWidget {
 
 // ============= COMPLETED APPOINTMENTS =============
 class CompletedAppointments extends StatelessWidget {
-  const CompletedAppointments({Key? key}) : super(key: key);
+  final List records;
+
+  const CompletedAppointments({Key? key, required this.records})
+    : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -297,7 +271,10 @@ class CompletedAppointments extends StatelessWidget {
       itemCount: completedAppointments.length,
       itemBuilder: (context, index) {
         final appointment = completedAppointments[index];
-        return AppointmentCard(appointment: appointment);
+        return AppointmentCard(
+          appointment: appointment,
+          records: records, // ✅ BUKAN list kosong
+        );
       },
     );
   }
@@ -316,7 +293,7 @@ class CancelledAppointments extends StatelessWidget {
       itemCount: cancelledAppointments.length,
       itemBuilder: (context, index) {
         final appointment = cancelledAppointments[index];
-        return AppointmentCard(appointment: appointment);
+        return AppointmentCard(appointment: appointment, records: []);
       },
     );
   }
@@ -325,9 +302,13 @@ class CancelledAppointments extends StatelessWidget {
 // ============= MODERN APPOINTMENT CARD =============
 class AppointmentCard extends StatelessWidget {
   final Appointment appointment;
+  final List? records;
 
-  const AppointmentCard({Key? key, required this.appointment})
-    : super(key: key);
+  const AppointmentCard({
+    Key? key,
+    required this.appointment,
+    required this.records,
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -605,7 +586,9 @@ class AppointmentCard extends StatelessWidget {
                 ],
               ),
             ),
-          if (appointment.status == 'completed')
+          if (appointment.status == 'completed' &&
+              records != null &&
+              records!.isNotEmpty)
             Container(
               decoration: BoxDecoration(
                 border: Border(
@@ -615,7 +598,16 @@ class AppointmentCard extends StatelessWidget {
               child: Material(
                 color: Colors.transparent,
                 child: InkWell(
-                  onTap: () {},
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder:
+                            (context) =>
+                                MedicalRecordDetailPage(record: records!.first),
+                      ),
+                    );
+                  },
                   borderRadius: const BorderRadius.only(
                     bottomLeft: Radius.circular(20),
                     bottomRight: Radius.circular(20),
@@ -625,14 +617,14 @@ class AppointmentCard extends StatelessWidget {
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(
-                          Icons.star_rounded,
-                          size: 20,
-                          color: Colors.amber[600],
-                        ),
+                        // Icon(
+                        //   Icons.star_rounded,
+                        //   size: 20,
+                        //   color: Colors.amber[600],
+                        // ),
                         const SizedBox(width: 8),
                         Text(
-                          'Beri Ulasan',
+                          'Cek Rekam Medis',
                           style: TextStyle(
                             fontSize: 15,
                             fontWeight: FontWeight.w600,

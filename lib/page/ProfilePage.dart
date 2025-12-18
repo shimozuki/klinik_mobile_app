@@ -1,7 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:klinik/page/EditProfilePage.dart';
+import 'package:klinik/page/ListRekamMedis.dart';
+import 'package:klinik/service/RekamMedisRepository.dart';
 
 class ProfilePage extends StatelessWidget {
-  const ProfilePage({Key? key}) : super(key: key);
+  ProfilePage({Key? key}) : super(key: key);
+
+  final RekamMedisRepository _rekamMedisRepository = RekamMedisRepository();
 
   @override
   Widget build(BuildContext context) {
@@ -115,29 +120,48 @@ class ProfilePage extends StatelessWidget {
                       icon: Icons.person_outline,
                       title: 'Edit Profil',
                       subtitle: 'Kelola informasi pribadi Anda',
-                      onTap: () {},
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const EditProfilPage(),
+                          ),
+                        );
+                      },
                     ),
                     const SizedBox(height: 12),
                     _buildMenuItem(
                       icon: Icons.medical_information_outlined,
                       title: 'Rekam Medis',
                       subtitle: 'Lihat riwayat rekam medis',
-                      onTap: () {},
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder:
+                                (context) => MedicalRecordListPage(
+                                  records:
+                                      _rekamMedisRepository
+                                          .getAllMedicalRecords(),
+                                ),
+                          ),
+                        );
+                      },
                     ),
-                    const SizedBox(height: 12),
-                    _buildMenuItem(
-                      icon: Icons.history,
-                      title: 'Riwayat Kunjungan',
-                      subtitle: 'Riwayat pemeriksaan dan konsultasi',
-                      onTap: () {},
-                    ),
-                    const SizedBox(height: 12),
-                    _buildMenuItem(
-                      icon: Icons.receipt_long_outlined,
-                      title: 'Riwayat Layanan',
-                      subtitle: 'Lihat semua layanan yang pernah digunakan',
-                      onTap: () {},
-                    ),
+                    // const SizedBox(height: 12),
+                    // _buildMenuItem(
+                    //   icon: Icons.history,
+                    //   title: 'Riwayat Kunjungan',
+                    //   subtitle: 'Riwayat pemeriksaan dan konsultasi',
+                    //   onTap: () {},
+                    // ),
+                    // const SizedBox(height: 12),
+                    // _buildMenuItem(
+                    //   icon: Icons.receipt_long_outlined,
+                    //   title: 'Riwayat Layanan',
+                    //   subtitle: 'Lihat semua layanan yang pernah digunakan',
+                    //   onTap: () {},
+                    // ),
                     const SizedBox(height: 12),
                     _buildMenuItem(
                       icon: Icons.notifications_outlined,

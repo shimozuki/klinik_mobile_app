@@ -18,7 +18,7 @@ class _HomePageState extends State<HomePage> {
     const HomeContent(),
     const AppointmentPage(),
     const ChatListPage(),
-    const ProfilePage(),
+    ProfilePage(),
   ];
 
   @override

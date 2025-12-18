@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:klinik/page/ChatListPage.dart';
 import 'package:klinik/page/JadwalPage.dart';
+import 'package:klinik/page/JadwalRutinPage.dart';
 import 'package:klinik/page/RekamMedisPage.dart';
 import 'package:klinik/page/RiwayatKunjunganPage.dart';
 import 'package:klinik/service/RekamMedisRepository.dart';
@@ -124,7 +125,12 @@ class HomeContent extends StatelessWidget {
                           label: 'Booking\nLayanan',
                           color: const Color(0xFF4A90E2),
                           onTap: () {
-                            // Aksi untuk Booking Layanan
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const JadwalPraktikPage(),
+                              ),
+                            );
                           },
                         ),
                         _buildQuickAction(
@@ -194,14 +200,14 @@ class HomeContent extends StatelessWidget {
                             );
                           },
                         ),
-                        _buildQuickAction(
-                          icon: Icons.receipt_long,
-                          label: 'Riwayat\nLayanan',
-                          color: const Color(0xFF1ABC9C),
-                          onTap: () {
-                            // Aksi untuk Riwayat Layanan
-                          },
-                        ),
+                        // _buildQuickAction(
+                        //   icon: Icons.receipt_long,
+                        //   label: 'Riwayat\nLayanan',
+                        //   color: const Color(0xFF1ABC9C),
+                        //   onTap: () {
+                        //     // Aksi untuk Riwayat Layanan
+                        //   },
+                        // ),
                       ],
                     ),
                   ],
