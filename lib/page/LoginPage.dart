@@ -77,25 +77,9 @@ class _LoginPageState extends State<LoginPage> {
                         Container(
                           width: 80,
                           height: 80,
-                          decoration: BoxDecoration(
-                            gradient: const LinearGradient(
-                              colors: [Color(0xFF4A90E2), Color(0xFF50C9C3)],
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                            ),
-                            borderRadius: BorderRadius.circular(20),
-                            boxShadow: [
-                              BoxShadow(
-                                color: const Color(0xFF4A90E2).withOpacity(0.3),
-                                blurRadius: 15,
-                                offset: const Offset(0, 8),
-                              ),
-                            ],
-                          ),
-                          child: const Icon(
-                            Icons.medical_services_rounded,
-                            size: 45,
-                            color: Colors.white,
+                          child: Image.asset(
+                            'assets/aset.png',
+                            fit: BoxFit.contain,
                           ),
                         ),
                         const SizedBox(height: 24),

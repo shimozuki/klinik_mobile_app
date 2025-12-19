@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:klinik/page/EditProfilePage.dart';
+import 'package:klinik/page/HelpSupportPage.dart';
 import 'package:klinik/page/ListRekamMedis.dart';
+import 'package:klinik/page/NotificationPage.dart';
+import 'package:klinik/page/PrivacyPolicyPage.dart';
 import 'package:klinik/service/RekamMedisRepository.dart';
 
 class ProfilePage extends StatelessWidget {
@@ -167,21 +170,42 @@ class ProfilePage extends StatelessWidget {
                       icon: Icons.notifications_outlined,
                       title: 'Notifikasi',
                       subtitle: 'Atur preferensi notifikasi',
-                      onTap: () {},
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => NotificationPage(),
+                          ),
+                        );
+                      },
                     ),
                     const SizedBox(height: 12),
                     _buildMenuItem(
                       icon: Icons.help_outline,
                       title: 'Bantuan & Dukungan',
                       subtitle: 'Pusat bantuan dan FAQ',
-                      onTap: () {},
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const HelpSupportPage(),
+                          ),
+                        );
+                      },
                     ),
                     const SizedBox(height: 12),
                     _buildMenuItem(
                       icon: Icons.privacy_tip_outlined,
                       title: 'Kebijakan Privasi',
                       subtitle: 'Baca kebijakan privasi kami',
-                      onTap: () {},
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const PrivacyPolicyPage(),
+                          ),
+                        );
+                      },
                     ),
                     const SizedBox(height: 24),
                     _buildLogoutButton(context),
