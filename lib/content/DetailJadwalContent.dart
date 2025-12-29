@@ -78,7 +78,7 @@ class DoctorDetailBottomSheet extends StatelessWidget {
               _buildDetailRow(
                 Icons.calendar_today_rounded,
                 'Hari Praktik',
-                schedule.day,
+                schedule.hari,
               ),
               const SizedBox(height: 16),
               _buildDetailRow(

@@ -162,7 +162,9 @@ class DoctorScheduleCard extends StatelessWidget {
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
-                            schedule.doctorName,
+                            schedule.kuota > 0
+                                ? 'Tersisa ${schedule.kuota} kuota untuk hari ${schedule.hari}.'
+                                : 'Kuota untuk hari ${schedule.hari} sudah penuh.',
                             style: TextStyle(
                               fontSize: 12,
                               color: Colors.blue[900],

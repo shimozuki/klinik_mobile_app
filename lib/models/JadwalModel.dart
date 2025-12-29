@@ -1,37 +1,40 @@
 class DoctorSchedule {
   final int id;
   final String doctorName;
-  final String day; // 🔥 INI YANG KURANG
-  final String time;
-  final String timeCategory;
-  final bool isAvailable;
+  final String hari;
+  final String jamMulai;
+  final String jamSelesai;
+  final int kuota;
+  final bool statusAktif;
 
   DoctorSchedule({
     required this.id,
     required this.doctorName,
-    required this.day,
-    required this.time,
-    required this.timeCategory,
-    required this.isAvailable,
+    required this.hari,
+    required this.jamMulai,
+    required this.jamSelesai,
+    required this.kuota,
+    required this.statusAktif,
   });
 
   factory DoctorSchedule.fromJson(Map<String, dynamic> json) {
-    final start = json['jam_mulai'].substring(0, 5);
-    final end = json['jam_selesai'].substring(0, 5);
-
     return DoctorSchedule(
       id: json['id'],
       doctorName: json['nama_dokter'],
-      day: json['hari'], // 🔥 MAPPING DARI API
-      time: '$start - $end',
-      timeCategory: _timeCategory(start),
-      isAvailable: json['status_aktif'] == 1,
+      hari: json['hari'],
+      jamMulai: json['jam_mulai'],
+      jamSelesai: json['jam_selesai'],
+      kuota: json['kuota'],
+      statusAktif: json['status_aktif'] == 1,
     );
   }
 
-  static String _timeCategory(String time) {
-    final hour = int.parse(time.split(':')[0]);
+  String get time => '$jamMulai - $jamSelesai';
 
+  bool get isAvailable => statusAktif && kuota > 0;
+
+  String get timeCategory {
+    final hour = int.parse(jamMulai.substring(0, 2));
     if (hour < 12) return 'pagi';
     if (hour < 18) return 'siang';
     return 'malam';

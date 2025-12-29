@@ -38,8 +38,8 @@ class _HomeContentState extends State<HomeContent> {
         _isLoading = false;
       });
     } catch (e) {
-      setState(() => _isLoading = false);
       debugPrint('Error load jadwal: $e');
+      setState(() => _isLoading = false);
     }
   }
 
@@ -276,7 +276,6 @@ class _HomeContentState extends State<HomeContent> {
 
           const SizedBox(height: 12),
 
-          /// CONTENT
           if (_isLoading)
             const Center(child: CircularProgressIndicator())
           else if (_schedules.isEmpty)
@@ -324,7 +323,7 @@ class _HomeContentState extends State<HomeContent> {
                 Text("Ahli Gigi", style: const TextStyle(fontSize: 12)),
                 const SizedBox(height: 4),
                 Text(
-                  '${schedule.day}, ${schedule.time}',
+                  '${schedule.hari}, ${schedule.time}',
                   style: const TextStyle(fontSize: 12),
                 ),
               ],
