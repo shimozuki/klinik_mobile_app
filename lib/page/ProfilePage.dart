@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:klinik/models/UserModel.dart';
 import 'package:klinik/page/EditProfilePage.dart';
 import 'package:klinik/page/HelpSupportPage.dart';
 import 'package:klinik/page/ListRekamMedis.dart';
@@ -7,7 +8,10 @@ import 'package:klinik/page/PrivacyPolicyPage.dart';
 import 'package:klinik/service/RekamMedisRepository.dart';
 
 class ProfilePage extends StatelessWidget {
-  ProfilePage({Key? key}) : super(key: key);
+  final UserModel user;
+  final String token;
+  ProfilePage({Key? key, required this.user, required this.token})
+    : super(key: key);
 
   final RekamMedisRepository _rekamMedisRepository = RekamMedisRepository();
 
@@ -73,8 +77,8 @@ class ProfilePage extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 16),
-                    const Text(
-                      'John Doe',
+                    Text(
+                      '${user.name}',
                       style: TextStyle(
                         color: Colors.white,
                         fontSize: 24,
@@ -83,7 +87,7 @@ class ProfilePage extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      'john.doe@email.com',
+                      '${user.email}',
                       style: TextStyle(
                         color: Colors.white.withOpacity(0.9),
                         fontSize: 14,

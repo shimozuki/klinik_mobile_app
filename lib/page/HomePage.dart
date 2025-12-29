@@ -26,7 +26,7 @@ class _HomePageState extends State<HomePage> {
       HomeContent(user: widget.user, token: widget.token),
       const AppointmentPage(),
       const ChatListPage(),
-      ProfilePage(),
+      ProfilePage(user: widget.user, token: widget.token),
     ];
   }
 

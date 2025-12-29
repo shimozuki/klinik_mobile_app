@@ -7,6 +7,7 @@ import 'package:klinik/page/JadwalPage.dart';
 import 'package:klinik/page/JadwalRutinPage.dart';
 import 'package:klinik/page/RekamMedisPage.dart';
 import 'package:klinik/page/RiwayatKunjunganPage.dart';
+import 'package:klinik/service/RekamMedisRepository.dart';
 
 class HomeContent extends StatefulWidget {
   final UserModel user;
@@ -155,16 +156,23 @@ class _HomeContentState extends State<HomeContent> {
             childAspectRatio: 0.85,
             children: [
               _quickAction(
-                icon: Icons.medical_services,
-                label: 'Booking\nLayanan',
-                color: Colors.blue,
+                icon: Icons.medication,
+                label: 'Rekam\nMedis',
+                color: const Color(0xFFFFBE0B),
                 onTap: () {
-                  // Navigator.push(
-                  //   context,
-                  //   MaterialPageRoute(
-                  //     builder: (_) => ScheduleViewPage(token: widget.token),
-                  //   ),
-                  // );
+                  final repository = RekamMedisRepository();
+                  final records = repository.getAllMedicalRecords();
+
+                  if (records.isNotEmpty) {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder:
+                            (context) =>
+                                MedicalRecordDetailPage(record: records.first),
+                      ),
+                    );
+                  }
                 },
               ),
               _quickAction(
@@ -181,13 +189,19 @@ class _HomeContentState extends State<HomeContent> {
                 },
               ),
               _quickAction(
-                icon: Icons.chat,
-                label: 'Konsultasi\nOnline',
-                color: Colors.purple,
+                icon: Icons.history,
+                label: 'Riwayat\nKunjungan',
+                color: const Color(0xFFFF6B6B),
                 onTap: () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (_) => ChatListPage()),
+                    MaterialPageRoute(
+                      builder:
+                          (context) => RiwayatKunjunganPage(
+                            patientId: 'P001', // Sesuaikan dengan data login
+                            patientName: 'Budi Santoso',
+                          ),
+                    ),
                   );
                 },
               ),
