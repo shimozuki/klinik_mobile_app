@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:klinik/auth/AuthGate.dart';
 import 'package:klinik/page/LoginPage.dart';
 
 void main() {
@@ -6,7 +7,7 @@ void main() {
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({Key? key}) : super(key: key);
+  const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -14,7 +15,7 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: 'Medical App',
       theme: ThemeData(primarySwatch: Colors.blue, fontFamily: 'Poppins'),
-      home: const LoginPage(),
+      home: const AuthGate(),
     );
   }
 }

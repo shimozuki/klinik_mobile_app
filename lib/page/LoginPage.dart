@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:klinik/page/RegisterPage.dart';
-import 'package:klinik/page/HomePage.dart'; // Import HomePage
+import 'package:klinik/page/HomePage.dart';
+import 'package:klinik/service/AuthRepository.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({Key? key}) : super(key: key);
@@ -15,6 +16,7 @@ class _LoginPageState extends State<LoginPage> {
   final _passwordController = TextEditingController();
   bool _obscurePassword = true;
   bool _isLoading = false;
+  final _authRepository = AuthRepository();
 
   @override
   void dispose() {
@@ -24,34 +26,41 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   void _handleLogin() async {
-    if (_formKey.currentState!.validate()) {
-      setState(() => _isLoading = true);
+    if (!_formKey.currentState!.validate()) return;
 
-      // Simulasi login - ganti dengan API call
-      await Future.delayed(const Duration(seconds: 2));
+    setState(() => _isLoading = true);
 
-      setState(() => _isLoading = false);
+    try {
+      final result = await _authRepository.login(
+        email: _emailController.text,
+        password: _passwordController.text,
+      );
 
-      if (mounted) {
-        // Navigasi ke HomePage setelah login berhasil
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => const HomePage()),
-        );
+      final token = result.$1;
+      final user = result.$2;
 
-        // Tampilkan snackbar setelah navigasi
-        Future.delayed(const Duration(milliseconds: 300), () {
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Login berhasil! Selamat datang'),
-                backgroundColor: Colors.green,
-                duration: Duration(seconds: 2),
-              ),
-            );
-          }
-        });
-      }
+      if (!mounted) return;
+
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => HomePage(user: user, token: token)),
+      );
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Selamat datang, ${user.name}'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(e.toString().replaceAll('Exception:', '').trim()),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 

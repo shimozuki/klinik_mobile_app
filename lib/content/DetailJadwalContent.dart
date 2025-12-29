@@ -61,7 +61,7 @@ class DoctorDetailBottomSheet extends StatelessWidget {
                         ),
                         const SizedBox(height: 6),
                         Text(
-                          schedule.specialty,
+                          "Ahli Gigi",
                           style: TextStyle(
                             fontSize: 14,
                             color: Colors.grey[600],
@@ -78,7 +78,7 @@ class DoctorDetailBottomSheet extends StatelessWidget {
               _buildDetailRow(
                 Icons.calendar_today_rounded,
                 'Hari Praktik',
-                schedule.days.join(', '),
+                schedule.day,
               ),
               const SizedBox(height: 16),
               _buildDetailRow(
@@ -90,12 +90,12 @@ class DoctorDetailBottomSheet extends StatelessWidget {
               _buildDetailRow(
                 Icons.location_on_rounded,
                 'Ruangan',
-                schedule.room,
+                schedule.time,
               ),
               const SizedBox(height: 16),
-              _buildDetailRow(Icons.phone_rounded, 'Telepon', schedule.phone),
+              // _buildDetailRow(Icons.phone_rounded, 'Telepon', schedule.phone),
               const SizedBox(height: 16),
-              _buildDetailRow(Icons.email_rounded, 'Email', schedule.email),
+              // _buildDetailRow(Icons.email_rounded, 'Email', schedule.email),
               const SizedBox(height: 28),
               // Action Buttons
               Row(

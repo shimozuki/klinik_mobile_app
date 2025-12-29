@@ -3,9 +3,13 @@ import 'package:klinik/content/HomeContent.dart';
 import 'package:klinik/page/AppointmentPage.dart';
 import 'package:klinik/page/ChatListPage.dart';
 import 'package:klinik/page/ProfilePage.dart';
+import 'package:klinik/models/UserModel.dart';
 
 class HomePage extends StatefulWidget {
-  const HomePage({Key? key}) : super(key: key);
+  final UserModel user;
+  final String token;
+
+  const HomePage({super.key, required this.user, required this.token});
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -13,13 +17,18 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   int _currentIndex = 0;
+  late List<Widget> _pages;
+  @override
+  void initState() {
+    super.initState();
 
-  final List<Widget> _pages = [
-    const HomeContent(),
-    const AppointmentPage(),
-    const ChatListPage(),
-    ProfilePage(),
-  ];
+    _pages = [
+      HomeContent(user: widget.user, token: widget.token),
+      const AppointmentPage(),
+      const ChatListPage(),
+      ProfilePage(),
+    ];
+  }
 
   @override
   Widget build(BuildContext context) {

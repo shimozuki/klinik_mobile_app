@@ -90,7 +90,7 @@ class DoctorScheduleCard extends StatelessWidget {
                               const SizedBox(width: 6),
                               Expanded(
                                 child: Text(
-                                  schedule.specialty,
+                                  "Ahli Gigi",
                                   style: TextStyle(
                                     fontSize: 13,
                                     color: Colors.grey[600],
@@ -137,13 +137,13 @@ class DoctorScheduleCard extends StatelessWidget {
                         child: _buildInfoItem(
                           Icons.location_on_rounded,
                           'Ruangan',
-                          schedule.room,
+                          "ruangan Praktek",
                         ),
                       ),
                     ],
                   ),
                 ),
-                if (schedule.notes.isNotEmpty) ...[
+                if (schedule.doctorName.isNotEmpty) ...[
                   const SizedBox(height: 12),
                   Container(
                     padding: const EdgeInsets.all(12),
@@ -162,7 +162,7 @@ class DoctorScheduleCard extends StatelessWidget {
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
-                            schedule.notes,
+                            schedule.doctorName,
                             style: TextStyle(
                               fontSize: 12,
                               color: Colors.blue[900],
