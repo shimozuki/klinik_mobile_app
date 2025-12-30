@@ -4,7 +4,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 class AppointmentData {
-  static const String _baseUrl = 'http://192.168.41.140:8000/api';
+  static const String _baseUrl = 'http://192.168.1.5:8000/api';
 
   static List<Appointment> upcomingAppointments = [];
   static List<Appointment> completedAppointments = [];

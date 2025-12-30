@@ -1,11 +1,42 @@
 import 'package:flutter/material.dart';
+import 'package:klinik/models/UserModel.dart';
 import 'package:klinik/page/LoginPage.dart';
 import 'package:klinik/page/HomePage.dart';
-import 'package:klinik/models/UserModel.dart';
 import 'package:klinik/service/AuthLocalStorage.dart';
 
-class AuthGate extends StatelessWidget {
-  const AuthGate({super.key});
+class AuthGate extends StatefulWidget {
+  const AuthGate({Key? key}) : super(key: key);
+
+  @override
+  State<AuthGate> createState() => _AuthGateState();
+}
+
+class _AuthGateState extends State<AuthGate> {
+  @override
+  void initState() {
+    super.initState();
+    _initAuth();
+  }
+
+  Future<void> _initAuth() async {
+    final auth = await _checkAuth();
+
+    if (!mounted) return;
+
+    if (auth == null) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => LoginPage()),
+      );
+    } else {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (_) => HomePage(user: auth.$1, token: auth.$2),
+        ),
+      );
+    }
+  }
 
   Future<(UserModel, String)?> _checkAuth() async {
     final token = await AuthLocalStorage.getToken();
@@ -16,8 +47,7 @@ class AuthGate extends StatelessWidget {
       return null;
     }
 
-    // cek token expired
-    if (DateTime.now().isAfter(expiredAt)) {
+    if (expiredAt.isBefore(DateTime.now())) {
       await AuthLocalStorage.clear();
       return null;
     }
@@ -27,24 +57,6 @@ class AuthGate extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<(UserModel, String)?>(
-      future: _checkAuth(),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Scaffold(
-            body: Center(child: CircularProgressIndicator()),
-          );
-        }
-
-        if (!snapshot.hasData) {
-          return const LoginPage();
-        }
-
-        final user = snapshot.data!.$1;
-        final token = snapshot.data!.$2;
-
-        return HomePage(user: user, token: token);
-      },
-    );
+    return const Scaffold(body: Center(child: CircularProgressIndicator()));
   }
 }

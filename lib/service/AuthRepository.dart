@@ -3,7 +3,7 @@ import 'package:http/http.dart' as http;
 import 'package:klinik/models/UserModel.dart';
 
 class AuthRepository {
-  static const String _baseUrl = 'http://192.168.41.140:8000/api';
+  static const String _baseUrl = 'http://192.168.1.5:8000/api';
 
   /// LOGIN
   Future<(String, UserModel)> login({
@@ -21,7 +21,7 @@ class AuthRepository {
     if (response.statusCode == 200 && data['success'] == true) {
       final String token = data['token'] as String;
       final UserModel user = UserModel.fromJson(data['user']);
-
+      print(user);
       return (token, user);
     } else {
       throw Exception(data['message'] ?? 'Login gagal');

@@ -5,7 +5,7 @@ import 'package:klinik/models/LayananOption.dart';
 import 'package:klinik/service/AuthLocalStorage.dart';
 
 class OptionRepository {
-  static const String _baseUrl = 'http://192.168.41.140:8000/api';
+  static const String _baseUrl = 'http://192.168.1.5:8000/api';
 
   static Future<Map<String, String>> _authHeader() async {
     final token = await AuthLocalStorage.getToken();

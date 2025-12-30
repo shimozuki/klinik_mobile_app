@@ -7,7 +7,6 @@ class AuthLocalStorage {
   static const _userKey = 'auth_user';
   static const _expiredAtKey = 'auth_expired_at';
 
-  /// SIMPAN LOGIN
   static Future<void> saveLogin({
     required String token,
     required UserModel user,
@@ -16,17 +15,15 @@ class AuthLocalStorage {
     final prefs = await SharedPreferences.getInstance();
 
     await prefs.setString(_tokenKey, token);
-    await prefs.setString(_userKey, jsonEncode(user.toJson()));
+    await prefs.setString(_userKey, jsonEncode(user));
     await prefs.setString(_expiredAtKey, expiredAt.toIso8601String());
   }
 
-  /// AMBIL TOKEN
   static Future<String?> getToken() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getString(_tokenKey);
   }
 
-  /// AMBIL USER
   static Future<UserModel?> getUser() async {
     final prefs = await SharedPreferences.getInstance();
     final userJson = prefs.getString(_userKey);
@@ -36,7 +33,6 @@ class AuthLocalStorage {
     return UserModel.fromJson(jsonDecode(userJson));
   }
 
-  /// ✅ INI YANG KURANG (FIX ERROR)
   static Future<DateTime?> getExpiredAt() async {
     final prefs = await SharedPreferences.getInstance();
     final expiredString = prefs.getString(_expiredAtKey);
@@ -46,7 +42,6 @@ class AuthLocalStorage {
     return DateTime.parse(expiredString);
   }
 
-  /// CLEAR (LOGOUT / TOKEN EXPIRED)
   static Future<void> clear() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_tokenKey);
