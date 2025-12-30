@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:klinik/page/RegisterPage.dart';
 import 'package:klinik/page/HomePage.dart';
 import 'package:klinik/service/AuthRepository.dart';
+import 'package:klinik/auth/AuthGate.dart';
+import 'package:klinik/service/AuthLocalStorage.dart';
+import 'package:jwt_decode/jwt_decode.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({Key? key}) : super(key: key);
@@ -39,11 +42,20 @@ class _LoginPageState extends State<LoginPage> {
       final token = result.$1;
       final user = result.$2;
 
-      if (!mounted) return;
+      final payload = Jwt.parseJwt(token);
+      final expiredAt = DateTime.fromMillisecondsSinceEpoch(
+        payload['exp'] * 1000,
+      );
+
+      await AuthLocalStorage.saveLogin(
+        token: token,
+        user: user,
+        expiredAt: expiredAt,
+      );
 
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (_) => HomePage(user: user, token: token)),
+        MaterialPageRoute(builder: (_) => const AuthGate()),
       );
 
       ScaffoldMessenger.of(context).showSnackBar(

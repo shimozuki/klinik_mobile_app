@@ -150,11 +150,11 @@ class _ScheduleViewPageState extends State<ScheduleViewPage> {
                               _byCategory('pagi'),
                             ),
                             _buildSection(
-                              'Siang (13:00 - 18:00)',
+                              'Siang (13:00 - 17:00)',
                               _byCategory('siang'),
                             ),
                             _buildSection(
-                              'Malam (19:00 - 21:00)',
+                              'Malam (18:00 - 21:00)',
                               _byCategory('malam'),
                             ),
                           ],

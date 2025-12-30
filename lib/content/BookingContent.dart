@@ -1,5 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:klinik/service/AppointmentRepository.dart';
+import 'package:klinik/service/AuthLocalStorage.dart';
+import 'package:klinik/service/JadwalRepository.dart';
+import 'package:klinik/service/ReservasiRepository.dart';
+import 'package:klinik/service/OptionRepository.dart';
+import 'package:klinik/models/JadwalModel.dart';
+import 'package:klinik/models/LayananOption.dart';
 
 class BookingBottomSheet extends StatefulWidget {
   const BookingBottomSheet({Key? key}) : super(key: key);
@@ -9,11 +14,55 @@ class BookingBottomSheet extends StatefulWidget {
 }
 
 class _BookingBottomSheetState extends State<BookingBottomSheet> {
-  String? selectedDoctor;
+  List<DoctorSchedule> jadwalList = [];
+  List<LayananOptionModel> layananList = [];
+
+  String? selectedJadwalLabel;
+  int? selectedJadwalId;
+
   String? selectedService;
+  int? selectedServiceId;
+
+  final TextEditingController keluhanController = TextEditingController();
+  bool isLoading = true;
+  bool isSubmitting = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadData();
+  }
+
+  Future<void> _loadData() async {
+    final token = await AuthLocalStorage.getToken();
+    if (token == null) return;
+
+    final jadwalRepo = JadwalDokterRepository();
+    final jadwal = await jadwalRepo.getJadwalDokter(token);
+    final layanan = await OptionRepository.getLayanan();
+
+    setState(() {
+      jadwalList = jadwal;
+      layananList = layanan;
+      isLoading = false;
+    });
+  }
+
+  @override
+  void dispose() {
+    keluhanController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
+    if (isLoading) {
+      return const Padding(
+        padding: EdgeInsets.all(32),
+        child: Center(child: CircularProgressIndicator()),
+      );
+    }
+
     return Container(
       decoration: const BoxDecoration(
         color: Colors.white,
@@ -29,107 +78,53 @@ class _BookingBottomSheetState extends State<BookingBottomSheet> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Center(
-                child: Container(
-                  width: 50,
-                  height: 5,
-                  decoration: BoxDecoration(
-                    color: Colors.grey[300],
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                ),
-              ),
+              _handle(),
               const SizedBox(height: 28),
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [Color(0xFF4A90E2), Color(0xFF50C9C3)],
-                      ),
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                    child: Icon(
-                      Icons.calendar_month_rounded,
-                      color: Colors.white,
-                      size: 24,
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  const Text(
-                    'Buat Booking Baru',
-                    style: TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF1A202C),
-                      letterSpacing: -0.5,
-                    ),
-                  ),
-                ],
-              ),
+              _header(),
               const SizedBox(height: 28),
-              const Text(
-                'Pilih Dokter',
-                style: TextStyle(
-                  fontWeight: FontWeight.w700,
-                  fontSize: 14,
-                  color: Color(0xFF2D3748),
-                ),
-              ),
+
+              // ================== JADWAL ==================
+              _label('Pilih Jadwal'),
               const SizedBox(height: 10),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 18),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF7FAFC),
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: Colors.grey[200]!),
-                ),
-                child: DropdownButton<String>(
+              _box(
+                DropdownButton<String>(
                   isExpanded: true,
                   underline: const SizedBox(),
                   hint: Text(
-                    'Pilih dokter',
+                    'Pilih jadwal',
                     style: TextStyle(color: Colors.grey[500]),
                   ),
-                  value: selectedDoctor,
+                  value: selectedJadwalLabel,
                   icon: Icon(
                     Icons.keyboard_arrow_down_rounded,
                     color: Colors.grey[600],
                   ),
                   items:
-                      AppointmentData.doctors.map((doctor) {
-                        return DropdownMenuItem(
-                          value: doctor['name'],
+                      jadwalList.map((j) {
+                        final label =
+                            '${j.hari} (${j.jamMulai} - ${j.jamSelesai})';
+                        return DropdownMenuItem<String>(
+                          value: label,
+                          onTap: () => selectedJadwalId = j.id,
                           child: Text(
-                            doctor['name'] ?? '',
+                            label,
                             style: const TextStyle(fontWeight: FontWeight.w500),
                           ),
                         );
                       }).toList(),
                   onChanged: (value) {
-                    setState(() => selectedDoctor = value);
+                    setState(() => selectedJadwalLabel = value);
                   },
                 ),
               ),
+
               const SizedBox(height: 20),
-              const Text(
-                'Jenis Layanan',
-                style: TextStyle(
-                  fontWeight: FontWeight.w700,
-                  fontSize: 14,
-                  color: Color(0xFF2D3748),
-                ),
-              ),
+
+              // ================== LAYANAN ==================
+              _label('Jenis Layanan'),
               const SizedBox(height: 10),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 18),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF7FAFC),
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: Colors.grey[200]!),
-                ),
-                child: DropdownButton<String>(
+              _box(
+                DropdownButton<String>(
                   isExpanded: true,
                   underline: const SizedBox(),
                   hint: Text(
@@ -142,11 +137,12 @@ class _BookingBottomSheetState extends State<BookingBottomSheet> {
                     color: Colors.grey[600],
                   ),
                   items:
-                      AppointmentData.services.map((service) {
-                        return DropdownMenuItem(
-                          value: service,
+                      layananList.map((l) {
+                        return DropdownMenuItem<String>(
+                          value: l.nama,
+                          onTap: () => selectedServiceId = l.id,
                           child: Text(
-                            service,
+                            l.nama,
                             style: const TextStyle(fontWeight: FontWeight.w500),
                           ),
                         );
@@ -156,33 +152,31 @@ class _BookingBottomSheetState extends State<BookingBottomSheet> {
                   },
                 ),
               ),
+
+              const SizedBox(height: 20),
+
+              // ================== KELUHAN ==================
+              _label('Keluhan'),
+              const SizedBox(height: 10),
+              _box(
+                TextField(
+                  controller: keluhanController,
+                  maxLines: 3,
+                  decoration: const InputDecoration(
+                    hintText: 'Tuliskan keluhan...',
+                    border: InputBorder.none,
+                  ),
+                ),
+              ),
+
               const SizedBox(height: 28),
+
+              // ================== SUBMIT ==================
               SizedBox(
                 width: double.infinity,
                 height: 56,
                 child: ElevatedButton(
-                  onPressed: () {
-                    Navigator.pop(context);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Row(
-                          children: [
-                            Icon(
-                              Icons.check_circle_rounded,
-                              color: Colors.white,
-                            ),
-                            const SizedBox(width: 12),
-                            const Text('Booking berhasil dibuat!'),
-                          ],
-                        ),
-                        backgroundColor: Colors.green[600],
-                        behavior: SnackBarBehavior.floating,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                    );
-                  },
+                  onPressed: isSubmitting ? null : _submit,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF4A90E2),
                     shape: RoundedRectangleBorder(
@@ -191,15 +185,17 @@ class _BookingBottomSheetState extends State<BookingBottomSheet> {
                     elevation: 0,
                     shadowColor: const Color(0xFF4A90E2).withOpacity(0.5),
                   ),
-                  child: const Text(
-                    'Buat Booking',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 0.3,
-                    ),
-                  ),
+                  child:
+                      isSubmitting
+                          ? const CircularProgressIndicator(color: Colors.white)
+                          : const Text(
+                            'Buat Booking',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                 ),
               ),
             ],
@@ -208,4 +204,95 @@ class _BookingBottomSheetState extends State<BookingBottomSheet> {
       ),
     );
   }
+
+  Future<void> _submit() async {
+    if (selectedJadwalId == null) return;
+
+    setState(() => isSubmitting = true);
+
+    try {
+      final token = await AuthLocalStorage.getToken();
+      print('Token Booking: $token');
+      if (token == null) return;
+
+      await ReservasiRepository.createReservasiSimple(
+        token: token,
+        jadwalId: selectedJadwalId!,
+        keluhan: keluhanController.text,
+      );
+
+      print(token);
+
+      if (!mounted) return;
+      Navigator.pop(context);
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Booking berhasil dibuat!'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    } finally {
+      setState(() => isSubmitting = false);
+    }
+  }
+
+  // ================== UI PART ==================
+  Widget _handle() => Center(
+    child: Container(
+      width: 50,
+      height: 5,
+      decoration: BoxDecoration(
+        color: Colors.grey[300],
+        borderRadius: BorderRadius.circular(10),
+      ),
+    ),
+  );
+
+  Widget _header() => Row(
+    children: [
+      Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: [Color(0xFF4A90E2), Color(0xFF50C9C3)],
+          ),
+          borderRadius: BorderRadius.circular(14),
+        ),
+        child: const Icon(
+          Icons.calendar_month_rounded,
+          color: Colors.white,
+          size: 24,
+        ),
+      ),
+      const SizedBox(width: 16),
+      const Text(
+        'Buat Booking Baru',
+        style: TextStyle(
+          fontSize: 24,
+          fontWeight: FontWeight.bold,
+          color: Color(0xFF1A202C),
+        ),
+      ),
+    ],
+  );
+
+  Widget _box(Widget child) => Container(
+    padding: const EdgeInsets.symmetric(horizontal: 18),
+    decoration: BoxDecoration(
+      color: const Color(0xFFF7FAFC),
+      borderRadius: BorderRadius.circular(14),
+      border: Border.all(color: Colors.grey[200]!),
+    ),
+    child: child,
+  );
+
+  Widget _label(String text) => Text(
+    text,
+    style: const TextStyle(
+      fontWeight: FontWeight.w700,
+      fontSize: 14,
+      color: Color(0xFF2D3748),
+    ),
+  );
 }

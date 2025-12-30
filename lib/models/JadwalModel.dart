@@ -36,7 +36,7 @@ class DoctorSchedule {
   String get timeCategory {
     final hour = int.parse(jamMulai.substring(0, 2));
     if (hour < 12) return 'pagi';
-    if (hour < 18) return 'siang';
+    if (hour < 17) return 'siang';
     return 'malam';
   }
 }

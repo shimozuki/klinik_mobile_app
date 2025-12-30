@@ -324,7 +324,30 @@ class _HomeContentState extends State<HomeContent> {
       ),
       child: Row(
         children: [
-          const CircleAvatar(radius: 28, child: Icon(Icons.person)),
+          Container(
+            width: 68,
+            height: 68,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [const Color(0xFF4A90E2), const Color(0xFF50C9C3)],
+              ),
+              borderRadius: BorderRadius.circular(18),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFF4A90E2).withOpacity(0.3),
+                  blurRadius: 12,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: const Icon(
+              Icons.person_rounded,
+              color: Colors.white,
+              size: 34,
+            ),
+          ),
           const SizedBox(width: 16),
           Expanded(
             child: Column(
