@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:klinik/models/UserModel.dart';
 import 'package:klinik/models/JadwalModel.dart';
+import 'package:klinik/models/ReservasiModel.dart';
 import 'package:klinik/service/JadwalRepository.dart';
-import 'package:klinik/page/ChatListPage.dart';
+import 'package:klinik/service/ReservasiRepository.dart';
 import 'package:klinik/page/JadwalPage.dart';
-import 'package:klinik/page/JadwalRutinPage.dart';
 import 'package:klinik/page/RekamMedisPage.dart';
 import 'package:klinik/page/RiwayatKunjunganPage.dart';
 import 'package:klinik/service/RekamMedisRepository.dart';
@@ -20,27 +20,45 @@ class HomeContent extends StatefulWidget {
 }
 
 class _HomeContentState extends State<HomeContent> {
-  final JadwalDokterRepository _repository = JadwalDokterRepository();
+  final JadwalDokterRepository _jadwalRepository = JadwalDokterRepository();
+  final ReservasiRepository _reservasiRepository = ReservasiRepository();
 
-  bool _isLoading = true;
+  bool _isLoadingJadwal = true;
+  bool _isLoadingReservasi = true;
+
   List<DoctorSchedule> _schedules = [];
+  List<ReservasiModel> _reservasiList = [];
 
   @override
   void initState() {
     super.initState();
     _loadSchedules();
+    _loadReservasi();
   }
 
   Future<void> _loadSchedules() async {
     try {
-      final data = await _repository.getJadwalDokter(widget.token);
+      final data = await _jadwalRepository.getJadwalDokter(widget.token);
       setState(() {
         _schedules = data;
-        _isLoading = false;
+        _isLoadingJadwal = false;
       });
     } catch (e) {
       debugPrint('Error load jadwal: $e');
-      setState(() => _isLoading = false);
+      setState(() => _isLoadingJadwal = false);
+    }
+  }
+
+  Future<void> _loadReservasi() async {
+    try {
+      final data = await _reservasiRepository.getReservasi(widget.token);
+      setState(() {
+        _reservasiList = data;
+        _isLoadingReservasi = false;
+      });
+    } catch (e) {
+      debugPrint('Error load reservasi: $e');
+      setState(() => _isLoadingReservasi = false);
     }
   }
 
@@ -56,6 +74,8 @@ class _HomeContentState extends State<HomeContent> {
               _buildHeader(),
               _buildQuickActions(context),
               _buildDoctorSchedules(context),
+              const SizedBox(height: 24),
+              _buildUpcomingReservation(),
               const SizedBox(height: 24),
             ],
           ),
@@ -162,13 +182,12 @@ class _HomeContentState extends State<HomeContent> {
                 onTap: () {
                   final repository = RekamMedisRepository();
                   final records = repository.getAllMedicalRecords();
-
                   if (records.isNotEmpty) {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
                         builder:
-                            (context) =>
+                            (_) =>
                                 MedicalRecordDetailPage(record: records.first),
                       ),
                     );
@@ -197,8 +216,8 @@ class _HomeContentState extends State<HomeContent> {
                     context,
                     MaterialPageRoute(
                       builder:
-                          (context) => RiwayatKunjunganPage(
-                            patientId: 'P001', // Sesuaikan dengan data login
+                          (_) => const RiwayatKunjunganPage(
+                            patientId: 'P001',
                             patientName: 'Budi Santoso',
                           ),
                     ),
@@ -256,17 +275,12 @@ class _HomeContentState extends State<HomeContent> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          /// HEADER + LIHAT SEMUA
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               const Text(
                 'Jadwal Praktik Dokter',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF2D3748),
-                ),
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
               TextButton(
                 onPressed: () {
@@ -287,86 +301,146 @@ class _HomeContentState extends State<HomeContent> {
               ),
             ],
           ),
-
           const SizedBox(height: 12),
-
-          if (_isLoading)
+          if (_isLoadingJadwal)
             const Center(child: CircularProgressIndicator())
-          else if (_schedules.isEmpty)
-            const Text(
-              'Tidak ada jadwal dokter',
-              style: TextStyle(color: Colors.grey),
-            )
           else
-            Column(
-              children:
-                  _schedules.take(3).map((e) {
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 12),
-                      child: _doctorCard(e),
-                    );
-                  }).toList(),
-            ),
+            Column(children: _schedules.take(3).map(_doctorCard).toList()),
         ],
       ),
     );
   }
 
   Widget _doctorCard(DoctorSchedule schedule) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10),
-        ],
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 68,
-            height: 68,
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [const Color(0xFF4A90E2), const Color(0xFF50C9C3)],
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10),
+          ],
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 68,
+              height: 68,
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Color(0xFF4A90E2), Color(0xFF50C9C3)],
+                ),
+                borderRadius: BorderRadius.circular(18),
               ),
-              borderRadius: BorderRadius.circular(18),
-              boxShadow: [
-                BoxShadow(
-                  color: const Color(0xFF4A90E2).withOpacity(0.3),
-                  blurRadius: 12,
-                  offset: const Offset(0, 4),
-                ),
-              ],
+              child: const Icon(
+                Icons.person_rounded,
+                color: Colors.white,
+                size: 34,
+              ),
             ),
-            child: const Icon(
-              Icons.person_rounded,
-              color: Colors.white,
-              size: 34,
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    schedule.doctorName,
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    '${schedule.hari}, ${schedule.time}',
+                    style: const TextStyle(fontSize: 12),
+                  ),
+                ],
+              ),
             ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ================= UPCOMING RESERVATION =================
+  Widget _buildUpcomingReservation() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Jadwal Mendatang',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  schedule.doctorName,
-                  style: const TextStyle(fontWeight: FontWeight.bold),
-                ),
-                Text("Ahli Gigi", style: const TextStyle(fontSize: 12)),
-                const SizedBox(height: 4),
-                Text(
-                  '${schedule.hari}, ${schedule.time}',
-                  style: const TextStyle(fontSize: 12),
-                ),
-              ],
+          const SizedBox(height: 12),
+          if (_isLoadingReservasi)
+            const Center(child: CircularProgressIndicator())
+          else if (_reservasiList.isEmpty)
+            const Text('Belum ada reservasi')
+          else
+            SizedBox(
+              height: 160,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                itemCount: _reservasiList.length,
+                separatorBuilder: (_, __) => const SizedBox(width: 12),
+                itemBuilder: (context, index) {
+                  final r = _reservasiList[index];
+                  return Container(
+                    width: 260,
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.05),
+                          blurRadius: 10,
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          r.nomorReservasi,
+                          style: const TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Antrian: ${r.nomorAntrian}',
+                          style: const TextStyle(
+                            color: Color(0xFF4A90E2),
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Dokter: ${r.dokter!.name}',
+                          style: const TextStyle(fontSize: 12),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Waktu: ${r.jadwal!.hari}, ${r.jadwal!.time}',
+                          style: const TextStyle(fontSize: 12),
+                        ),
+                        const Spacer(),
+                        Text(
+                          r.status,
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: Colors.orange,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
             ),
-          ),
-          const Icon(Icons.arrow_forward_ios, size: 16),
         ],
       ),
     );

@@ -219,6 +219,7 @@ class _BookingBottomSheetState extends State<BookingBottomSheet> {
         token: token,
         jadwalId: selectedJadwalId!,
         keluhan: keluhanController.text,
+        layananId: selectedServiceId!,
       );
 
       print(token);

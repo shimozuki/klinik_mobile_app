@@ -6,6 +6,8 @@ import 'package:klinik/models/AppointmentModel.dart';
 import 'package:klinik/page/RekamMedisPage.dart';
 import 'package:klinik/service/AppointmentRepository.dart';
 import 'package:klinik/service/RekamMedisRepository.dart';
+import 'package:klinik/models/ReservasiModel.dart';
+import 'package:klinik/service/AuthLocalStorage.dart';
 
 class AppointmentPage extends StatefulWidget {
   const AppointmentPage({Key? key}) : super(key: key);
@@ -20,6 +22,31 @@ class _AppointmentPageState extends State<AppointmentPage>
   int _selectedTab = 0;
 
   final records = RekamMedisRepository().getAllMedicalRecords();
+  Future<List<ReservasiModel>>? _reservasiFuture;
+
+  Future<void> _loadReservasi() async {
+    final token = await AuthLocalStorage.getToken();
+    if (token == null) return;
+
+    setState(() {
+      _reservasiFuture = AppointmentData().getReservasi(token);
+    });
+  }
+
+  String _mapStatus(String status) {
+    switch (status) {
+      case 'menunggu':
+        return 'pending';
+      case 'dikonfirmasi':
+        return 'confirmed';
+      case 'selesai':
+        return 'completed';
+      case 'dibatalkan':
+        return 'cancelled';
+      default:
+        return status;
+    }
+  }
 
   @override
   void initState() {
@@ -28,6 +55,8 @@ class _AppointmentPageState extends State<AppointmentPage>
     _tabController.addListener(() {
       setState(() => _selectedTab = _tabController.index);
     });
+
+    _loadReservasi();
   }
 
   @override
@@ -114,13 +143,53 @@ class _AppointmentPageState extends State<AppointmentPage>
             ),
             // Content
             Expanded(
-              child: TabBarView(
-                controller: _tabController,
-                children: [
-                  UpcomingAppointments(records: records),
-                  CompletedAppointments(records: records),
-                  CancelledAppointments(),
-                ],
+              child: FutureBuilder<List<ReservasiModel>>(
+                future: _reservasiFuture,
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+
+                  if (snapshot.hasError) {
+                    return Center(child: Text(snapshot.error.toString()));
+                  }
+
+                  final data = snapshot.data ?? [];
+
+                  AppointmentData.upcomingAppointments.clear();
+                  AppointmentData.completedAppointments.clear();
+                  AppointmentData.cancelledAppointments.clear();
+
+                  for (final r in data) {
+                    final appointment = Appointment(
+                      id: r.id.toString(),
+                      doctorName: r.dokter?.name ?? '-',
+                      specialty: 'Dokter Gigi',
+                      serviceType: r.layanan?.nama ?? '-',
+                      date: r.tanggalReservasi.toString().split(' ').first,
+                      time: r.jamReservasi ?? '-',
+                      status: _mapStatus(r.status),
+                    );
+
+                    if (appointment.status == 'pending' ||
+                        appointment.status == 'confirmed') {
+                      AppointmentData.upcomingAppointments.add(appointment);
+                    } else if (appointment.status == 'completed') {
+                      AppointmentData.completedAppointments.add(appointment);
+                    } else if (appointment.status == 'cancelled') {
+                      AppointmentData.cancelledAppointments.add(appointment);
+                    }
+                  }
+
+                  return TabBarView(
+                    controller: _tabController,
+                    children: [
+                      UpcomingAppointments(records: records),
+                      CompletedAppointments(records: records),
+                      CancelledAppointments(),
+                    ],
+                  );
+                },
               ),
             ),
           ],
@@ -244,6 +313,12 @@ class UpcomingAppointments extends StatelessWidget {
   Widget build(BuildContext context) {
     final upcomingAppointments = AppointmentData.upcomingAppointments;
 
+    if (upcomingAppointments.isEmpty) {
+      return const EmptyStateWidget(
+        message: 'Belum ada jadwal kunjungan mendatang',
+      );
+    }
+
     return ListView.builder(
       padding: const EdgeInsets.all(20),
       itemCount: upcomingAppointments.length,
@@ -265,6 +340,12 @@ class CompletedAppointments extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final completedAppointments = AppointmentData.completedAppointments;
+
+    if (completedAppointments.isEmpty) {
+      return const EmptyStateWidget(
+        message: 'Belum ada jadwal kunjungan selesai',
+      );
+    }
 
     return ListView.builder(
       padding: const EdgeInsets.all(20),
@@ -303,11 +384,13 @@ class CancelledAppointments extends StatelessWidget {
 class AppointmentCard extends StatelessWidget {
   final Appointment appointment;
   final List? records;
+  final VoidCallback? onCancelled;
 
   const AppointmentCard({
     Key? key,
     required this.appointment,
     required this.records,
+    this.onCancelled,
   }) : super(key: key);
 
   @override
@@ -705,77 +788,132 @@ class AppointmentCard extends StatelessWidget {
     );
   }
 
-  void _showCancelDialog(BuildContext context) {
+  void _showCancelDialog(BuildContext parentContext) {
     showDialog(
-      context: context,
+      context: parentContext,
       builder:
-          (context) => AlertDialog(
+          (dialogContext) => AlertDialog(
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(20),
             ),
-            title: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: Colors.red[50],
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Icon(Icons.warning_rounded, color: Colors.red[400]),
-                ),
-                const SizedBox(width: 12),
-                const Text(
-                  'Batalkan Jadwal',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                ),
-              ],
-            ),
+            title: const Text('Batalkan Jadwal'),
             content: const Text(
-              'Apakah Anda yakin ingin membatalkan jadwal ini? Tindakan ini tidak dapat dibatalkan.',
-              style: TextStyle(fontSize: 14, height: 1.5),
+              'Apakah Anda yakin ingin membatalkan jadwal ini?',
             ),
             actions: [
               TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: Text(
-                  'Tidak',
-                  style: TextStyle(
-                    color: Colors.grey[600],
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
+                onPressed: () => Navigator.pop(dialogContext),
+                child: const Text('Tidak'),
               ),
               ElevatedButton(
-                onPressed: () {
-                  Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: const Text('Jadwal berhasil dibatalkan'),
-                      backgroundColor: Colors.orange[600],
-                      behavior: SnackBarBehavior.floating,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
+                onPressed: () async {
+                  Navigator.pop(dialogContext);
+
+                  try {
+                    final token = await AuthLocalStorage.getToken();
+                    if (token == null) return;
+
+                    await AppointmentData.cancelReservasi(
+                      token: token,
+                      reservasiId: int.parse(appointment.id),
+                    );
+
+                    if (onCancelled != null) {
+                      onCancelled!();
+                    }
+
+                    ScaffoldMessenger.of(parentContext).showSnackBar(
+                      const SnackBar(
+                        content: Text('Reservasi berhasil dibatalkan'),
+                        backgroundColor: Colors.green,
                       ),
-                    ),
-                  );
+                    );
+                  } catch (e) {
+                    ScaffoldMessenger.of(parentContext).showSnackBar(
+                      SnackBar(
+                        content: Text(e.toString()),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                  }
                 },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.red[400],
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  elevation: 0,
-                ),
-                child: const Text(
-                  'Ya, Batalkan',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
+                child: const Text('Ya, Batalkan'),
               ),
             ],
           ),
+    );
+    // ignore: unused_element
+    String _mapStatus(String status) {
+      switch (status) {
+        case 'menunggu':
+          return 'pending';
+        case 'dikonfirmasi':
+          return 'confirmed';
+        case 'selesai':
+          return 'completed';
+        case 'dibatalkan':
+          return 'cancelled';
+        default:
+          return status;
+      }
+    }
+  }
+}
+
+// ============= EMPTY STATE =============
+class EmptyStateWidget extends StatelessWidget {
+  final String message;
+
+  const EmptyStateWidget({
+    Key? key,
+    this.message = 'Belum ada data untuk ditampilkan.',
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            width: 140,
+            height: 140,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Color(0xFF4A90E2), Color(0xFF50C9C3)],
+              ),
+              borderRadius: BorderRadius.circular(70),
+            ),
+            child: Icon(
+              Icons.receipt_long_rounded,
+              size: 70,
+              color: const Color(0xFF4ECDC4).withOpacity(0.5),
+            ),
+          ),
+          const SizedBox(height: 28),
+          const Text(
+            'Belum Ada Riwayat',
+            style: TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF2C3E50),
+            ),
+          ),
+          const SizedBox(height: 10),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 50),
+            child: Text(
+              message,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontSize: 14,
+                color: Color(0xFF95A5A6),
+                height: 1.5,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

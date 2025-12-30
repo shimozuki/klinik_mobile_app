@@ -15,10 +15,11 @@ class LayananOptionModel {
 
   factory LayananOptionModel.fromJson(Map<String, dynamic> json) {
     return LayananOptionModel(
-      id: json['id'],
-      kode: json['kode'],
-      nama: json['nama'],
-      harga: double.parse(json['harga'].toString()),
+      id: json['id'] ?? 0,
+      kode: json['kode']?.toString() ?? '',
+      nama: json['nama']?.toString() ?? '-',
+      harga:
+          json['harga'] != null ? double.parse(json['harga'].toString()) : 0.0,
       estimasiDurasi: json['estimasi_durasi'],
     );
   }

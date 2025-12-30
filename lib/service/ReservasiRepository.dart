@@ -1,18 +1,45 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:klinik/models/ReservasiModel.dart';
 
 class ReservasiRepository {
   static const String _baseUrl = 'http://192.168.41.140:8000/api';
 
+  Future<List<ReservasiModel>> getReservasi(String token) async {
+    final response = await http.get(
+      Uri.parse('$_baseUrl/reservasi'),
+      headers: {'Accept': 'application/json', 'Authorization': 'Bearer $token'},
+    );
+
+    if (response.statusCode == 200) {
+      final json = jsonDecode(response.body);
+      return (json['data'] as List)
+          .map((e) => ReservasiModel.fromJson(e))
+          .toList();
+    } else {
+      throw Exception('Gagal mengambil data reservasi');
+    }
+  }
+
   static Future<void> createReservasiSimple({
     required String token,
     required int jadwalId,
+    int? layananId,
     String? keluhan,
   }) async {
+    final Map<String, String> body = {
+      'jadwal_id': jadwalId.toString(),
+      'keluhan': keluhan ?? '',
+    };
+
+    if (layananId != null) {
+      body['layanan_id'] = layananId.toString();
+    }
+
     final response = await http.post(
       Uri.parse('$_baseUrl/reservasi'),
       headers: {'Accept': 'application/json', 'Authorization': 'Bearer $token'},
-      body: {'jadwal_id': jadwalId.toString(), 'keluhan': keluhan ?? ''},
+      body: body,
     );
 
     if (response.statusCode != 201) {

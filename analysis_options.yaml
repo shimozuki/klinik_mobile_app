@@ -11,6 +11,7 @@ analyzer:
   errors:
     unused_import: ignore
     unused_field: ignore
+    no_leading_underscores_for_local_identifiers: ignore
 include: package:flutter_lints/flutter.yaml
 
 linter:
