@@ -154,12 +154,7 @@ class _ProfilePageState extends State<ProfilePage> {
             onTap: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(
-                  builder:
-                      (_) => MedicalRecordListPage(
-                        records: _rekamMedisRepository.getAllMedicalRecords(),
-                      ),
-                ),
+                MaterialPageRoute(builder: (_) => MedicalRecordListPage()),
               );
             },
           ),

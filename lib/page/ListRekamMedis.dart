@@ -1,12 +1,23 @@
 import 'package:flutter/material.dart';
-import 'package:klinik/models/RekamMedisModel.dart';
+import 'package:klinik/models/ListRekamMedisModel.dart';
+import 'package:klinik/service/ListRekamMedisRepository.dart';
 import 'package:klinik/page/RekamMedisPage.dart';
 
-class MedicalRecordListPage extends StatelessWidget {
-  final List<MedicalRecord> records;
+class MedicalRecordListPage extends StatefulWidget {
+  const MedicalRecordListPage({Key? key}) : super(key: key);
 
-  const MedicalRecordListPage({Key? key, required this.records})
-    : super(key: key);
+  @override
+  State<MedicalRecordListPage> createState() => _MedicalRecordListPageState();
+}
+
+class _MedicalRecordListPageState extends State<MedicalRecordListPage> {
+  late Future<List<ListRekamMedisModel>> _futureRecords;
+
+  @override
+  void initState() {
+    super.initState();
+    _futureRecords = ListRekamMedisRepository().getByPasien();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -17,17 +28,33 @@ class MedicalRecordListPage extends StatelessWidget {
           children: [
             _buildHeader(context),
             Expanded(
-              child:
-                  records.isEmpty
-                      ? _emptyState()
-                      : ListView.builder(
-                        padding: const EdgeInsets.all(20),
-                        itemCount: records.length,
-                        itemBuilder: (context, index) {
-                          final record = records[index];
-                          return _MedicalRecordCard(record: record);
-                        },
-                      ),
+              child: FutureBuilder<List<ListRekamMedisModel>>(
+                future: _futureRecords,
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+
+                  if (snapshot.hasError) {
+                    return _errorState(snapshot.error.toString());
+                  }
+
+                  final records = snapshot.data ?? [];
+
+                  if (records.isEmpty) {
+                    return _emptyState();
+                  }
+
+                  return ListView.builder(
+                    padding: const EdgeInsets.all(20),
+                    itemCount: records.length,
+                    itemBuilder: (context, index) {
+                      final record = records[index];
+                      return _MedicalRecordCard(record: record);
+                    },
+                  );
+                },
+              ),
             ),
           ],
         ),
@@ -35,6 +62,7 @@ class MedicalRecordListPage extends StatelessWidget {
     );
   }
 
+  // ================= HEADER =================
   Widget _buildHeader(BuildContext context) {
     return Container(
       padding: const EdgeInsets.fromLTRB(20, 20, 20, 24),
@@ -74,6 +102,7 @@ class MedicalRecordListPage extends StatelessWidget {
     );
   }
 
+  // ================= EMPTY =================
   Widget _emptyState() {
     return Center(
       child: Column(
@@ -94,10 +123,37 @@ class MedicalRecordListPage extends StatelessWidget {
       ),
     );
   }
+
+  // ================= ERROR =================
+  Widget _errorState(String message) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.error_outline, size: 60, color: Colors.redAccent),
+            const SizedBox(height: 16),
+            const Text(
+              'Gagal memuat data',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              message,
+              textAlign: TextAlign.center,
+              style: TextStyle(color: Colors.grey[600]),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
+// ================= CARD =================
 class _MedicalRecordCard extends StatelessWidget {
-  final MedicalRecord record;
+  final ListRekamMedisModel record;
 
   const _MedicalRecordCard({required this.record});
 
@@ -125,15 +181,15 @@ class _MedicalRecordCard extends StatelessWidget {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => MedicalRecordDetailPage(record: record),
+              builder:
+                  (context) =>
+                      MedicalRecordDetailPage(nomorReservasi: record.id),
             ),
           );
         },
-
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            /// Header
             Row(
               children: [
                 Container(
@@ -167,7 +223,7 @@ class _MedicalRecordCard extends StatelessWidget {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        record.visitTime,
+                        record.doctorName,
                         style: TextStyle(color: Colors.grey[600]),
                       ),
                     ],
@@ -176,14 +232,9 @@ class _MedicalRecordCard extends StatelessWidget {
                 _statusBadge(record.status),
               ],
             ),
-
             const SizedBox(height: 16),
-
-            /// Doctor
             _infoRow(Icons.person, 'Dokter', record.doctorName),
             const SizedBox(height: 8),
-
-            /// Complaint
             _infoRow(Icons.notes, 'Keluhan', record.complaint),
           ],
         ),

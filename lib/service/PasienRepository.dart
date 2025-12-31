@@ -1,10 +1,11 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:klinik/config/ApiConfig.dart';
 import '../models/UserModel.dart';
 
 class PasienRepository {
-  final String baseUrl = 'http://192.168.1.5:8000/api';
+  final String _baseUrl = ApiConfig.baseUrl;
 
   Future<UserModel> updateProfile({
     required String token,
@@ -13,7 +14,7 @@ class PasienRepository {
     try {
       final response = await http
           .put(
-            Uri.parse('$baseUrl/pasien/profile'),
+            Uri.parse('$_baseUrl/pasien/profile'),
             headers: {
               'Accept': 'application/json',
               'Content-Type': 'application/json',

@@ -1,11 +1,12 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:klinik/config/ApiConfig.dart';
 import 'package:klinik/models/DokterOption.dart';
 import 'package:klinik/models/LayananOption.dart';
 import 'package:klinik/service/AuthLocalStorage.dart';
 
 class OptionRepository {
-  static const String _baseUrl = 'http://192.168.1.5:8000/api';
+  static String _baseUrl = ApiConfig.baseUrl;
 
   static Future<Map<String, String>> _authHeader() async {
     final token = await AuthLocalStorage.getToken();

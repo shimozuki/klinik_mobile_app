@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:klinik/models/RekamMedisModel.dart';
+import 'package:klinik/models/ListRekamMedisModel.dart';
+import 'package:klinik/models/PrescriptionModel.dart';
+import 'package:klinik/service/ListRekamMedisRepository.dart';
 
 class MedicalRecordDetailPage extends StatefulWidget {
-  final MedicalRecord record;
+  final String nomorReservasi;
 
-  const MedicalRecordDetailPage({Key? key, required this.record})
+  const MedicalRecordDetailPage({Key? key, required this.nomorReservasi})
     : super(key: key);
 
   @override
@@ -16,11 +18,25 @@ class MedicalRecordDetailPage extends StatefulWidget {
 class _MedicalRecordDetailPageState extends State<MedicalRecordDetailPage>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
+  late Future<ListRekamMedisModel> _futureRecord;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
+    _futureRecord = _fetchDetail();
+  }
+
+  Future<ListRekamMedisModel> _fetchDetail() async {
+    final result = await ListRekamMedisRepository().getByReservasi(
+      widget.nomorReservasi,
+    );
+
+    if (result.isEmpty) {
+      throw Exception('Rekam medis tidak ditemukan');
+    }
+
+    return result.first;
   }
 
   @override
@@ -29,7 +45,7 @@ class _MedicalRecordDetailPageState extends State<MedicalRecordDetailPage>
     super.dispose();
   }
 
-  String _formatCurrency(double amount) {
+  String _formatCurrency(int amount) {
     final formatter = NumberFormat.currency(
       locale: 'id_ID',
       symbol: 'Rp ',
@@ -43,35 +59,43 @@ class _MedicalRecordDetailPageState extends State<MedicalRecordDetailPage>
     return Scaffold(
       backgroundColor: const Color(0xFFF5F7FA),
       body: SafeArea(
-        child: Column(
-          children: [
-            // Header
-            _buildHeader(),
+        child: FutureBuilder<ListRekamMedisModel>(
+          future: _futureRecord,
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator());
+            }
 
-            // Patient Info Card
-            _buildPatientInfoCard(),
+            if (snapshot.hasError) {
+              return Center(child: Text(snapshot.error.toString()));
+            }
 
-            // Tab Bar
-            _buildTabBar(),
+            final record = snapshot.data!;
 
-            // Tab Bar View
-            Expanded(
-              child: TabBarView(
-                controller: _tabController,
-                children: [
-                  _buildDiagnosisTab(),
-                  _buildPrescriptionTab(),
-                  _buildDetailsTab(),
-                ],
-              ),
-            ),
-          ],
+            return Column(
+              children: [
+                _buildHeader(record),
+                _buildPatientInfoCard(record),
+                _buildTabBar(),
+                Expanded(
+                  child: TabBarView(
+                    controller: _tabController,
+                    children: [
+                      _buildDiagnosisTab(record),
+                      _buildPrescriptionTab(record),
+                      _buildDetailsTab(record),
+                    ],
+                  ),
+                ),
+              ],
+            );
+          },
         ),
       ),
     );
   }
 
-  Widget _buildHeader() {
+  Widget _buildHeader(ListRekamMedisModel record) {
     return Container(
       decoration: const BoxDecoration(
         gradient: LinearGradient(
@@ -112,7 +136,7 @@ class _MedicalRecordDetailPageState extends State<MedicalRecordDetailPage>
                   ),
                 ),
                 Text(
-                  widget.record.formattedDate,
+                  record.formattedDate,
                   style: TextStyle(
                     fontSize: 13,
                     color: Colors.white.withOpacity(0.9),
@@ -125,20 +149,18 @@ class _MedicalRecordDetailPageState extends State<MedicalRecordDetailPage>
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
               color:
-                  widget.record.status == 'completed'
+                  record.status == 'completed'
                       ? Colors.green.withOpacity(0.3)
                       : Colors.orange.withOpacity(0.3),
               borderRadius: BorderRadius.circular(20),
               border: Border.all(
                 color:
-                    widget.record.status == 'completed'
-                        ? Colors.green
-                        : Colors.orange,
+                    record.status == 'completed' ? Colors.green : Colors.orange,
                 width: 1.5,
               ),
             ),
             child: Text(
-              widget.record.status == 'completed' ? 'Selesai' : 'Progress',
+              record.status == 'completed' ? 'Selesai' : 'Progress',
               style: const TextStyle(
                 color: Colors.white,
                 fontSize: 12,
@@ -151,7 +173,7 @@ class _MedicalRecordDetailPageState extends State<MedicalRecordDetailPage>
     );
   }
 
-  Widget _buildPatientInfoCard() {
+  Widget _buildPatientInfoCard(ListRekamMedisModel record) {
     return Container(
       margin: const EdgeInsets.all(20),
       padding: const EdgeInsets.all(16),
@@ -189,7 +211,7 @@ class _MedicalRecordDetailPageState extends State<MedicalRecordDetailPage>
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  widget.record.patientName,
+                  record.patientName,
                   style: const TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
@@ -207,7 +229,7 @@ class _MedicalRecordDetailPageState extends State<MedicalRecordDetailPage>
                     const SizedBox(width: 4),
                     Expanded(
                       child: Text(
-                        widget.record.doctorName,
+                        record.doctorName,
                         style: const TextStyle(
                           fontSize: 13,
                           color: Color(0xFF95A5A6),
@@ -223,7 +245,7 @@ class _MedicalRecordDetailPageState extends State<MedicalRecordDetailPage>
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Text(
-                _formatCurrency(widget.record.totalCost),
+                _formatCurrency(record.totalCost),
                 style: const TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
@@ -283,21 +305,21 @@ class _MedicalRecordDetailPageState extends State<MedicalRecordDetailPage>
     );
   }
 
-  Widget _buildDiagnosisTab() {
+  Widget _buildDiagnosisTab(ListRekamMedisModel record) {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(20),
       child: Column(
         children: [
           // Vital Signs (jika ada)
-          if (widget.record.vitalSigns != null) ...[
-            _buildVitalSignsCard(),
+          if (record.vitalSigns != null) ...[
+            _buildVitalSignsCard(record),
             const SizedBox(height: 16),
           ],
 
           // Keluhan
           _buildInfoSection(
             'Keluhan',
-            widget.record.complaint,
+            record.complaint,
             Icons.feedback_rounded,
             const Color(0xFFFF6B6B),
           ),
@@ -306,30 +328,30 @@ class _MedicalRecordDetailPageState extends State<MedicalRecordDetailPage>
           // Diagnosis
           _buildInfoSection(
             'Diagnosis',
-            widget.record.diagnosis,
+            record.diagnosis,
             Icons.medical_information_outlined,
             const Color(0xFF667EEA),
           ),
           const SizedBox(height: 16),
 
           // Treatment
-          _buildInfoSection(
-            'Perawatan',
-            widget.record.treatment,
-            Icons.healing_rounded,
-            const Color(0xFF4ECDC4),
-          ),
+          // _buildInfoSection(
+          //   'Perawatan',
+          //   record.,
+          //   Icons.healing_rounded,
+          //   const Color(0xFF4ECDC4),
+          // ),
         ],
       ),
     );
   }
 
-  Widget _buildPrescriptionTab() {
+  Widget _buildPrescriptionTab(ListRekamMedisModel record) {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(20),
       child: Column(
         children: [
-          if (widget.record.prescriptions.isEmpty)
+          if (record.prescriptions.isEmpty)
             Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -349,13 +371,12 @@ class _MedicalRecordDetailPageState extends State<MedicalRecordDetailPage>
               ),
             )
           else
-            ...widget.record.prescriptions.asMap().entries.map((entry) {
+            ...record.prescriptions.asMap().entries.map((entry) {
               final index = entry.key;
               final prescription = entry.value;
               return Padding(
                 padding: EdgeInsets.only(
-                  bottom:
-                      index < widget.record.prescriptions.length - 1 ? 12 : 0,
+                  bottom: index < record.prescriptions.length - 1 ? 12 : 0,
                 ),
                 child: _buildPrescriptionCard(prescription, index + 1),
               );
@@ -365,28 +386,28 @@ class _MedicalRecordDetailPageState extends State<MedicalRecordDetailPage>
     );
   }
 
-  Widget _buildDetailsTab() {
+  Widget _buildDetailsTab(ListRekamMedisModel record) {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(20),
       child: Column(
         children: [
           // Procedures
-          _buildProceduresCard(),
+          _buildProceduresCard(record),
           const SizedBox(height: 16),
 
           // Notes
-          _buildNotesCard(),
+          _buildNotesCard(record),
           const SizedBox(height: 16),
 
           // Visit Info
-          _buildVisitInfoCard(),
+          _buildVisitInfoCard(record),
         ],
       ),
     );
   }
 
-  Widget _buildVitalSignsCard() {
-    final vitalSigns = widget.record.vitalSigns!;
+  Widget _buildVitalSignsCard(ListRekamMedisModel record) {
+    final vitalSigns = record.vitalSigns!;
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -638,7 +659,7 @@ class _MedicalRecordDetailPageState extends State<MedicalRecordDetailPage>
             'Durasi',
             '${prescription.duration} hari',
           ),
-          if (prescription.notes.isNotEmpty) ...[
+          if (prescription.notes != null) ...[
             const SizedBox(height: 12),
             Container(
               padding: const EdgeInsets.all(10),
@@ -657,7 +678,7 @@ class _MedicalRecordDetailPageState extends State<MedicalRecordDetailPage>
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      prescription.notes,
+                      prescription.notes!,
                       style: const TextStyle(
                         fontSize: 12,
                         color: Color(0xFF2C3E50),
@@ -697,7 +718,7 @@ class _MedicalRecordDetailPageState extends State<MedicalRecordDetailPage>
     );
   }
 
-  Widget _buildProceduresCard() {
+  Widget _buildProceduresCard(ListRekamMedisModel record) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -740,12 +761,12 @@ class _MedicalRecordDetailPageState extends State<MedicalRecordDetailPage>
             ],
           ),
           const SizedBox(height: 12),
-          ...widget.record.procedures.asMap().entries.map((entry) {
+          ...record.procedures.asMap().entries.map((entry) {
             final index = entry.key;
             final procedure = entry.value;
             return Padding(
               padding: EdgeInsets.only(
-                bottom: index < widget.record.procedures.length - 1 ? 8 : 0,
+                bottom: index < record.procedures.length - 1 ? 8 : 0,
               ),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -789,7 +810,7 @@ class _MedicalRecordDetailPageState extends State<MedicalRecordDetailPage>
     );
   }
 
-  Widget _buildNotesCard() {
+  Widget _buildNotesCard(ListRekamMedisModel record) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -839,7 +860,7 @@ class _MedicalRecordDetailPageState extends State<MedicalRecordDetailPage>
               borderRadius: BorderRadius.circular(10),
             ),
             child: Text(
-              widget.record.notes,
+              record.notes,
               style: const TextStyle(
                 fontSize: 13,
                 color: Color(0xFF2C3E50),
@@ -852,7 +873,7 @@ class _MedicalRecordDetailPageState extends State<MedicalRecordDetailPage>
     );
   }
 
-  Widget _buildVisitInfoCard() {
+  Widget _buildVisitInfoCard(ListRekamMedisModel record) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -882,7 +903,7 @@ class _MedicalRecordDetailPageState extends State<MedicalRecordDetailPage>
               ),
               const Spacer(),
               Text(
-                '${widget.record.formattedDate} • ${widget.record.visitTime}',
+                '${record.formattedDate} • ${record.patientName}',
                 style: const TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
@@ -906,7 +927,7 @@ class _MedicalRecordDetailPageState extends State<MedicalRecordDetailPage>
               ),
               const Spacer(),
               Text(
-                _formatCurrency(widget.record.totalCost),
+                _formatCurrency(record.totalCost),
                 style: const TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,

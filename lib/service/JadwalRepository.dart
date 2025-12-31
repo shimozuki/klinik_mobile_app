@@ -1,13 +1,14 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:klinik/config/ApiConfig.dart';
 import 'package:klinik/models/JadwalModel.dart';
 
 class JadwalDokterRepository {
-  final String baseUrl = 'http://192.168.1.5:8000/api';
+  final String _baseUrl = ApiConfig.baseUrl;
 
   Future<List<DoctorSchedule>> getJadwalDokter(String token) async {
     final response = await http.get(
-      Uri.parse('$baseUrl/jadwal-dokter'),
+      Uri.parse('$_baseUrl/jadwal-dokter'),
       headers: {'Authorization': 'Bearer $token', 'Accept': 'application/json'},
     );
 

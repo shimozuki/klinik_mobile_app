@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:klinik/models/UserModel.dart';
 import 'package:klinik/models/JadwalModel.dart';
 import 'package:klinik/models/ReservasiModel.dart';
+import 'package:klinik/page/ListRekamMedis.dart';
 import 'package:klinik/service/JadwalRepository.dart';
 import 'package:klinik/service/ReservasiRepository.dart';
 import 'package:klinik/page/JadwalPage.dart';
@@ -186,9 +187,7 @@ class _HomeContentState extends State<HomeContent> {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder:
-                            (_) =>
-                                MedicalRecordDetailPage(record: records.first),
+                        builder: (_) => MedicalRecordListPage(),
                       ),
                     );
                   }

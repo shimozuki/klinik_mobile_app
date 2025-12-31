@@ -682,14 +682,14 @@ class AppointmentCard extends StatelessWidget {
                 color: Colors.transparent,
                 child: InkWell(
                   onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder:
-                            (context) =>
-                                MedicalRecordDetailPage(record: records!.first),
-                      ),
-                    );
+                    // Navigator.push(
+                    //   context,
+                    //   MaterialPageRoute(
+                    //     builder:
+                    //         (context) =>
+                    //             MedicalRecordDetailPage(record: records!.first),
+                    //   ),
+                    // );
                   },
                   borderRadius: const BorderRadius.only(
                     bottomLeft: Radius.circular(20),

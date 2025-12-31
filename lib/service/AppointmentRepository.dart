@@ -1,10 +1,11 @@
+import 'package:klinik/config/ApiConfig.dart';
 import 'package:klinik/models/AppointmentModel.dart';
 import 'package:klinik/models/ReservasiModel.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 class AppointmentData {
-  static const String _baseUrl = 'http://192.168.1.5:8000/api';
+  static String _baseUrl = ApiConfig.baseUrl;
 
   static List<Appointment> upcomingAppointments = [];
   static List<Appointment> completedAppointments = [];
