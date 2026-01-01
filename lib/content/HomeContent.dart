@@ -214,11 +214,7 @@ class _HomeContentState extends State<HomeContent> {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder:
-                          (_) => const RiwayatKunjunganPage(
-                            patientId: 'P001',
-                            patientName: 'Budi Santoso',
-                          ),
+                      builder: (_) => const RiwayatKunjunganPage(),
                     ),
                   );
                 },

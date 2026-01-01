@@ -106,11 +106,11 @@ class RiwayatDetailModal extends StatelessWidget {
                     [
                       _buildDetailRow('Diagnosa', visit.diagnosis),
                       _buildDetailRow('Perawatan', visit.treatment),
-                      if (visit.teethNumbers.isNotEmpty)
-                        _buildDetailRow(
-                          'Nomor Gigi',
-                          visit.teethNumbers.join(', '),
-                        ),
+                      // if (visit.teethNumbers.isNotEmpty)
+                      //   _buildDetailRow(
+                      //     'Nomor Gigi',
+                      //     visit.teethNumbers.join(', '),
+                      //   ),
                     ],
                   ),
 
@@ -121,8 +121,8 @@ class RiwayatDetailModal extends StatelessWidget {
                     _buildSection('Rincian Biaya', Icons.receipt_long_rounded, [
                       _buildCostRow('Biaya Perawatan', visit.treatmentCost),
                       _buildCostRow('Biaya Konsultasi', visit.consultationFee),
-                      if (visit.additionalCost > 0)
-                        _buildCostRow('Biaya Tambahan', visit.additionalCost),
+                      if (visit.totalCost > 0)
+                        _buildCostRow('Biaya Tambahan', visit.totalCost),
                       const Divider(height: 24),
                       _buildCostRow(
                         'Total Biaya',

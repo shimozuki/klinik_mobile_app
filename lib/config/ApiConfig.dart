@@ -5,7 +5,7 @@ class ApiConfig {
     if (isProd) {
       return '';
     } else {
-      return 'http://192.168.41.172:8000/api';
+      return 'http://192.168.1.5:8000/api';
     }
   }
 }

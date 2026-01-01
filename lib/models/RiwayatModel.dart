@@ -1,5 +1,3 @@
-// models/dental_visit_model.dart
-
 class DentalVisit {
   final String id;
   final String patientName;
@@ -9,13 +7,14 @@ class DentalVisit {
   final String treatmentType;
   final String diagnosis;
   final String treatment;
-  final List<String> teethNumbers; // Nomor gigi yang ditangani
   final String notes;
+
   final double treatmentCost;
   final double consultationFee;
-  final double additionalCost;
-  final String paymentMethod; // cash, transfer, debit, credit
-  final String status; // completed, cancelled, scheduled
+  final double totalCost;
+
+  final String paymentMethod;
+  final String status;
   final String? nextAppointment;
 
   DentalVisit({
@@ -27,22 +26,17 @@ class DentalVisit {
     required this.treatmentType,
     required this.diagnosis,
     required this.treatment,
-    required this.teethNumbers,
     required this.notes,
     required this.treatmentCost,
     required this.consultationFee,
-    required this.additionalCost,
+    required this.totalCost,
     required this.paymentMethod,
     required this.status,
     this.nextAppointment,
   });
 
-  // Total biaya
-  double get totalCost => treatmentCost + consultationFee + additionalCost;
-
-  // Format tanggal Indonesia
   String get formattedDate {
-    final months = [
+    const months = [
       'Januari',
       'Februari',
       'Maret',
@@ -59,40 +53,21 @@ class DentalVisit {
     return '${visitDate.day} ${months[visitDate.month - 1]} ${visitDate.year}';
   }
 
-  // Format tanggal singkat
-  String get shortDate {
-    final months = [
-      'Jan',
-      'Feb',
-      'Mar',
-      'Apr',
-      'Mei',
-      'Jun',
-      'Jul',
-      'Agu',
-      'Sep',
-      'Okt',
-      'Nov',
-      'Des',
-    ];
-    return '${visitDate.day} ${months[visitDate.month - 1]} ${visitDate.year}';
-  }
-
-  // Get status text
   String get statusText {
     switch (status) {
-      case 'completed':
+      case 'selesai':
         return 'Selesai';
-      case 'cancelled':
+      case 'dibatalkan':
         return 'Dibatalkan';
-      case 'scheduled':
-        return 'Terjadwal';
+      case 'dikonfirmasi':
+        return 'Proses';
+      case 'menunggu':
+        return 'Menunggu';
       default:
-        return 'Unknown';
+        return status;
     }
   }
 
-  // Get payment method text
   String get paymentMethodText {
     switch (paymentMethod) {
       case 'cash':
@@ -108,91 +83,55 @@ class DentalVisit {
     }
   }
 
-  // Convert to JSON
-  Map<String, dynamic> toJson() {
-    return {
-      'id': id,
-      'patientName': patientName,
-      'patientId': patientId,
-      'visitDate': visitDate.toIso8601String(),
-      'visitTime': visitTime,
-      'treatmentType': treatmentType,
-      'diagnosis': diagnosis,
-      'treatment': treatment,
-      'teethNumbers': teethNumbers,
-      'notes': notes,
-      'treatmentCost': treatmentCost,
-      'consultationFee': consultationFee,
-      'additionalCost': additionalCost,
-      'paymentMethod': paymentMethod,
-      'status': status,
-      'nextAppointment': nextAppointment,
-    };
-  }
-
-  // Create from JSON
   factory DentalVisit.fromJson(Map<String, dynamic> json) {
     return DentalVisit(
-      id: json['id'] as String,
-      patientName: json['patientName'] as String,
-      patientId: json['patientId'] as String,
-      visitDate: DateTime.parse(json['visitDate'] as String),
-      visitTime: json['visitTime'] as String,
-      treatmentType: json['treatmentType'] as String,
-      diagnosis: json['diagnosis'] as String,
-      treatment: json['treatment'] as String,
-      teethNumbers: List<String>.from(json['teethNumbers'] as List),
-      notes: json['notes'] as String,
-      treatmentCost: (json['treatmentCost'] as num).toDouble(),
-      consultationFee: (json['consultationFee'] as num).toDouble(),
-      additionalCost: (json['additionalCost'] as num).toDouble(),
-      paymentMethod: json['paymentMethod'] as String,
-      status: json['status'] as String,
-      nextAppointment: json['nextAppointment'] as String?,
+      id: json['id'].toString(),
+      patientName: json['patientName'] ?? '',
+      patientId: json['patientId'] ?? '',
+      visitDate: DateTime.parse(json['visitDate']),
+      visitTime: json['visitTime'] ?? '-',
+      treatmentType: json['treatmentType'] ?? 'Konsultasi',
+      diagnosis: json['diagnosis'] ?? '',
+      treatment: json['treatment'] ?? '',
+      notes: json['notes'] ?? '',
+
+      // 🔥 SAFE CASTING
+      treatmentCost:
+          double.tryParse(json['treatmentCost']?.toString() ?? '0') ?? 0.0,
+
+      consultationFee:
+          double.tryParse(json['consultationFee']?.toString() ?? '0') ?? 0.0,
+
+      totalCost:
+          double.tryParse(
+            json['additionalCost']?.toString() ??
+                json['totalCost']?.toString() ??
+                '0',
+          ) ??
+          0.0,
+
+      paymentMethod: json['paymentMethod'] ?? 'cash',
+      status: _mapStatus(json['status']),
+      nextAppointment: json['nextAppointment'],
     );
   }
 
-  // Copy with method for updates
-  DentalVisit copyWith({
-    String? id,
-    String? patientName,
-    String? patientId,
-    DateTime? visitDate,
-    String? visitTime,
-    String? treatmentType,
-    String? diagnosis,
-    String? treatment,
-    List<String>? teethNumbers,
-    String? notes,
-    double? treatmentCost,
-    double? consultationFee,
-    double? additionalCost,
-    String? paymentMethod,
-    String? status,
-    String? nextAppointment,
-  }) {
-    return DentalVisit(
-      id: id ?? this.id,
-      patientName: patientName ?? this.patientName,
-      patientId: patientId ?? this.patientId,
-      visitDate: visitDate ?? this.visitDate,
-      visitTime: visitTime ?? this.visitTime,
-      treatmentType: treatmentType ?? this.treatmentType,
-      diagnosis: diagnosis ?? this.diagnosis,
-      treatment: treatment ?? this.treatment,
-      teethNumbers: teethNumbers ?? this.teethNumbers,
-      notes: notes ?? this.notes,
-      treatmentCost: treatmentCost ?? this.treatmentCost,
-      consultationFee: consultationFee ?? this.consultationFee,
-      additionalCost: additionalCost ?? this.additionalCost,
-      paymentMethod: paymentMethod ?? this.paymentMethod,
-      status: status ?? this.status,
-      nextAppointment: nextAppointment ?? this.nextAppointment,
-    );
+  // 🔥 MAP STATUS BACKEND → FRONTEND
+  static String _mapStatus(String? status) {
+    switch (status) {
+      case 'dikonfirmasi':
+      case 'menunggu':
+        return 'scheduled';
+      case 'selesai':
+        return 'completed';
+      case 'dibatalkan':
+        return 'cancelled';
+      default:
+        return status ?? 'completed';
+    }
   }
 }
 
-// Model untuk statistik
 class VisitStatistics {
   final int totalVisits;
   final int completedVisits;

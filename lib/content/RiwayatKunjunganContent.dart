@@ -2,17 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:klinik/content/RiwayatKunjunganPaintCard.dart';
 import 'package:klinik/content/RiwayatDetailModal.dart';
 import 'package:klinik/models/RiwayatModel.dart';
+import 'package:klinik/service/AuthLocalStorage.dart';
 import 'package:klinik/service/RiwayatRepository.dart';
 
 class RiwayatKunjunganContent extends StatefulWidget {
-  final String patientId; // ID pasien yang login
-  final String patientName; // Nama pasien yang login
-
-  const RiwayatKunjunganContent({
-    Key? key,
-    required this.patientId,
-    required this.patientName,
-  }) : super(key: key);
+  const RiwayatKunjunganContent({Key? key}) : super(key: key);
 
   @override
   State<RiwayatKunjunganContent> createState() =>
@@ -20,7 +14,7 @@ class RiwayatKunjunganContent extends StatefulWidget {
 }
 
 class _RiwayatKunjunganContentState extends State<RiwayatKunjunganContent> {
-  final DentalVisitRepository _repository = DentalVisitRepository();
+  final RiwayatRepository _repository = RiwayatRepository();
 
   List<DentalVisit> _myVisits = []; // Riwayat kunjungan pasien ini saja
   List<DentalVisit> _filteredVisits = [];
@@ -45,7 +39,10 @@ class _RiwayatKunjunganContentState extends State<RiwayatKunjunganContent> {
     setState(() => _isLoading = true);
 
     try {
-      final visits = await _repository.getVisitsByPatient(widget.patientId);
+      final token = await AuthLocalStorage.getToken();
+      if (token == null) throw Exception('Token tidak ditemukan');
+
+      final visits = await _repository.getAllRiwayat(token);
 
       setState(() {
         _myVisits = visits;
@@ -109,8 +106,11 @@ class _RiwayatKunjunganContentState extends State<RiwayatKunjunganContent> {
           children: [
             // Header dengan info pasien
             PatientVisitHeader(
-              patientName: widget.patientName,
-              clinicName: _repository.clinicInfo['name'] ?? 'Klinik Gigi',
+              patientName:
+                  _filteredVisits.isNotEmpty
+                      ? _filteredVisits.first.patientName
+                      : 'Pasien',
+              clinicName: 'Klinik DRG Ayu Dental Care',
               onBackPressed: () => Navigator.pop(context),
             ),
 

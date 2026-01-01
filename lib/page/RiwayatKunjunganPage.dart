@@ -2,69 +2,43 @@ import 'package:flutter/material.dart';
 import 'package:klinik/content/RiwayatDetailModal.dart';
 import 'package:klinik/content/RiwayatKunjunganPaintCard.dart';
 import 'package:klinik/models/RiwayatModel.dart';
+import 'package:klinik/service/AuthLocalStorage.dart';
 import 'package:klinik/service/RiwayatRepository.dart';
 
 class RiwayatKunjunganPage extends StatefulWidget {
-  final String? patientId;
-  final String? patientName;
-
-  const RiwayatKunjunganPage({Key? key, this.patientId, this.patientName})
-    : super(key: key);
+  const RiwayatKunjunganPage({Key? key}) : super(key: key);
 
   @override
   State<RiwayatKunjunganPage> createState() => _RiwayatKunjunganPageState();
 }
 
 class _RiwayatKunjunganPageState extends State<RiwayatKunjunganPage> {
-  final DentalVisitRepository _repository = DentalVisitRepository();
+  final RiwayatRepository _repository = RiwayatRepository();
 
   List<DentalVisit> _myVisits = [];
   List<DentalVisit> _filteredVisits = [];
   String _selectedFilter = 'Semua';
   bool _isLoading = true;
 
-  // Data pasien
-  late String _currentPatientId;
-  late String _currentPatientName;
-
   final List<Map<String, dynamic>> _filters = [
     {'label': 'Semua', 'status': null},
     {'label': 'Selesai', 'status': 'completed'},
-    {'label': 'Terjadwal', 'status': 'scheduled'},
-    {'label': 'Dibatalkan', 'status': 'cancelled'},
+    {'label': 'Menunggu', 'status': 'menunggu'},
+    {'label': 'Dibatalkan', 'status': 'dibatalkan'},
   ];
 
   @override
   void initState() {
     super.initState();
-    _initializePatientData();
     _loadMyVisits();
-  }
-
-  // Inisialisasi data pasien (bisa dari parameter atau SharedPreferences)
-  void _initializePatientData() {
-    // Jika patientId dan patientName di-pass dari parameter
-    if (widget.patientId != null && widget.patientName != null) {
-      _currentPatientId = widget.patientId!;
-      _currentPatientName = widget.patientName!;
-    } else {
-      // TODO: Ambil dari SharedPreferences atau state management
-      // Sementara pakai dummy data
-      _currentPatientId = 'P001';
-      _currentPatientName = 'Budi Santoso';
-
-      // Contoh dengan SharedPreferences (uncomment jika sudah setup):
-      // final prefs = await SharedPreferences.getInstance();
-      // _currentPatientId = prefs.getString('patient_id') ?? 'P001';
-      // _currentPatientName = prefs.getString('patient_name') ?? 'Guest';
-    }
   }
 
   Future<void> _loadMyVisits() async {
     setState(() => _isLoading = true);
 
     try {
-      final visits = await _repository.getVisitsByPatient(_currentPatientId);
+      final token = await AuthLocalStorage.getToken();
+      final visits = await _repository.getAllRiwayat(token!);
 
       setState(() {
         _myVisits = visits;
@@ -140,23 +114,23 @@ class _RiwayatKunjunganPageState extends State<RiwayatKunjunganPage> {
           children: [
             // Header
             PatientVisitHeader(
-              patientName: _currentPatientName,
-              clinicName: _repository.clinicInfo['name'] ?? 'Klinik Gigi',
+              patientName:
+                  _filteredVisits.isNotEmpty
+                      ? _filteredVisits.first.patientName
+                      : 'Pasien',
+              clinicName: 'Klinik DRG Ayu Dental Care',
               onBackPressed: () => Navigator.pop(context),
             ),
 
-            // Content Area
             Expanded(
               child: Column(
                 children: [
-                  // Filter Chips
                   VisitFilterChips(
                     selectedFilter: _selectedFilter,
                     filters: _filters,
                     onFilterSelected: _onFilterSelected,
                   ),
 
-                  // Statistics Card (hanya tampil jika ada data)
                   if (_filteredVisits.isNotEmpty && !_isLoading)
                     PatientStatisticsCard(
                       totalVisits: _filteredVisits.length,
