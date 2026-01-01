@@ -29,6 +29,20 @@ class AuthRepository {
     }
   }
 
+  Future<void> saveFcmToken({
+    required String token,
+    required String fcmToken,
+  }) async {
+    await http.post(
+      Uri.parse('$_baseUrl/save-fcm-token'),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode({'fcm_token': fcmToken}),
+    );
+  }
+
   /// REGISTER PASIEN
   Future<void> register({
     required String name,

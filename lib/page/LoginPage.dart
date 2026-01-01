@@ -5,6 +5,8 @@ import 'package:klinik/service/AuthRepository.dart';
 import 'package:klinik/auth/AuthGate.dart';
 import 'package:klinik/service/AuthLocalStorage.dart';
 import 'package:jwt_decode/jwt_decode.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({Key? key}) : super(key: key);
@@ -20,6 +22,20 @@ class _LoginPageState extends State<LoginPage> {
   bool _obscurePassword = true;
   bool _isLoading = false;
   final _authRepository = AuthRepository();
+  final FirebaseMessaging _fcm = FirebaseMessaging.instance;
+
+  Future<void> _initFCMAndSaveToken() async {
+    await _fcm.requestPermission();
+
+    final fcmToken = await _fcm.getToken();
+    debugPrint('🔥 FCM TOKEN: $fcmToken');
+
+    if (fcmToken != null) {
+      final jwt = await AuthLocalStorage.getToken();
+
+      await _authRepository.saveFcmToken(token: jwt!, fcmToken: fcmToken);
+    }
+  }
 
   @override
   void dispose() {
@@ -52,6 +68,8 @@ class _LoginPageState extends State<LoginPage> {
         user: user,
         expiredAt: expiredAt,
       );
+
+      await _initFCMAndSaveToken();
 
       Navigator.pushReplacement(
         context,

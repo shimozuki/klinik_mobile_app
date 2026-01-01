@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "416705767210",
+    "project_id": "klink-789d3",
+    "storage_bucket": "klink-789d3.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:416705767210:android:264ba64c7c777d2db5a053",
+        "android_client_info": {
+          "package_name": "com.example.klinik"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCQz4nWQMSZ5TdxnRrFda8seCaQ9DsM4v0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
