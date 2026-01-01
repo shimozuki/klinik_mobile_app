@@ -4,6 +4,7 @@ import 'package:klinik/models/UserModel.dart';
 import 'package:klinik/page/EditProfilePage.dart';
 import 'package:klinik/page/HelpSupportPage.dart';
 import 'package:klinik/page/ListRekamMedis.dart';
+import 'package:klinik/page/LoginPage.dart';
 import 'package:klinik/page/NotificationPage.dart';
 import 'package:klinik/page/PrivacyPolicyPage.dart';
 import 'package:klinik/service/AuthRepository.dart';
@@ -34,20 +35,25 @@ class _ProfilePageState extends State<ProfilePage> {
     token = widget.token;
   }
 
-  Future<void> handleLogout(BuildContext context) async {
+  Future<void> handleLogout() async {
     final token = await AuthLocalStorage.getToken();
-
     if (token == null) return;
 
     try {
       await AuthRepository().logout(token);
-
       await AuthLocalStorage.clear();
-
       await FirebaseMessaging.instance.deleteToken();
 
-      Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
+      if (!mounted) return;
+
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (_) => const LoginPage()),
+        (route) => false,
+      );
     } catch (e) {
+      print('error $e');
+      if (!mounted) return;
+
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text('Gagal logout')));
@@ -324,7 +330,7 @@ class _ProfilePageState extends State<ProfilePage> {
       child: InkWell(
         borderRadius: BorderRadius.circular(12),
         onTap: () async {
-          await handleLogout(context);
+          await handleLogout();
         },
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
