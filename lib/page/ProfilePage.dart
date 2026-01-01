@@ -180,18 +180,18 @@ class _ProfilePageState extends State<ProfilePage> {
               );
             },
           ),
-          const SizedBox(height: 12),
-          _buildMenuItem(
-            icon: Icons.notifications_outlined,
-            title: 'Notifikasi',
-            subtitle: 'Atur preferensi notifikasi',
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => NotificationPage()),
-              );
-            },
-          ),
+          // const SizedBox(height: 12),
+          // _buildMenuItem(
+          //   icon: Icons.notifications_outlined,
+          //   title: 'Notifikasi',
+          //   subtitle: 'Atur preferensi notifikasi',
+          //   onTap: () {
+          //     Navigator.push(
+          //       context,
+          //       MaterialPageRoute(builder: (_) => NotificationPage()),
+          //     );
+          //   },
+          // ),
           const SizedBox(height: 12),
           _buildMenuItem(
             icon: Icons.help_outline,
