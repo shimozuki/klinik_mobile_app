@@ -94,9 +94,13 @@ class AuthRepository {
 
   /// LOGOUT
   Future<void> logout(String token) async {
-    await http.post(
+    final response = await http.post(
       Uri.parse('$_baseUrl/logout'),
       headers: {'Accept': 'application/json', 'Authorization': 'Bearer $token'},
     );
+
+    if (response.statusCode != 200) {
+      throw Exception('Logout gagal');
+    }
   }
 }
