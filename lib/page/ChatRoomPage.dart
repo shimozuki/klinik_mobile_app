@@ -1,12 +1,21 @@
+import 'dart:async';
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import 'package:klinik/config/ApiConfig.dart';
 import 'package:klinik/content/ChatBubbleComponent.dart';
+import 'package:klinik/models/ChatMessageModel.dart';
 import 'package:klinik/models/ChatModel.dart';
-import 'package:klinik/service/ChatRepository.dart';
+import 'package:klinik/service/AuthLocalStorage.dart';
+import 'package:klinik/service/ChatifyRepository.dart';
+import 'package:pusher_channels_flutter/pusher_channels_flutter.dart';
 
 class ChatRoomPage extends StatefulWidget {
-  final ChatRoom chatRoom;
+  final int userId;
+  final String userName;
 
-  const ChatRoomPage({Key? key, required this.chatRoom}) : super(key: key);
+  const ChatRoomPage({Key? key, required this.userId, required this.userName})
+    : super(key: key);
 
   @override
   State<ChatRoomPage> createState() => _ChatRoomPageState();
@@ -15,35 +24,189 @@ class ChatRoomPage extends StatefulWidget {
 class _ChatRoomPageState extends State<ChatRoomPage> {
   final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
-  List<ChatMessage> messages = [];
+  List<ChatMessageModel> messages = [];
   bool isLoading = true;
   bool isSending = false;
+  PusherChannelsFlutter? pusher;
+  late int myUserId;
+
+  static String baseUrl = ApiConfig.baseUrl;
+  Timer? _pollingTimer;
+
+  void _startPolling() {
+    _pollingTimer = Timer.periodic(const Duration(seconds: 3), (_) {
+      if (!mounted) return;
+      _loadMessages(silent: true); // 🚫 TIDAK ADA LOADING
+    });
+  }
 
   @override
   void initState() {
     super.initState();
+    _init();
     _loadMessages();
+  }
+
+  Future<void> _init() async {
+    await _loadMessages();
+    await _initPusher();
+    _startPolling();
+  }
+
+  Future<void> _initPusher() async {
+    // ✅ Cek mounted sebelum init
+    if (!mounted) return;
+
+    pusher = PusherChannelsFlutter.getInstance();
+
+    try {
+      await pusher!.init(
+        apiKey: '7845f41408ddc1cfd065',
+        cluster: 'ap1',
+        authEndpoint: '$baseUrl/chat/auth',
+        onConnectionStateChange: (currentState, previousState) {
+          print('🔌 Pusher State Changed: $previousState -> $currentState');
+        },
+        onError: (message, code, error) {
+          print('❌ Pusher Error: $message (code: $code)');
+        },
+        onEvent: (event) {
+          // ✅ CRITICAL: Cek mounted DI AWAL
+          if (!mounted) {
+            print('⚠️ Widget not mounted, ignoring event');
+            return;
+          }
+
+          print('📨 Event: ${event.eventName}');
+          print('📦 Data: ${event.data}');
+
+          if (event.eventName == 'messaging') {
+            try {
+              final data = jsonDecode(event.data);
+              final message = data['message'];
+
+              // ✅ Cek mounted sebelum setState
+              if (!mounted) {
+                print('⚠️ Widget not mounted before setState');
+                return;
+              }
+
+              setState(() {
+                messages.add(ChatMessageModel.fromChatify(message, myUserId));
+              });
+
+              _scrollToBottom();
+              print('✅ Message added');
+            } catch (e) {
+              print('❌ Error parsing: $e');
+            }
+          }
+        },
+      );
+
+      print('👤 My User ID: $myUserId');
+      print('📡 Subscribing to: private-chatify.$myUserId');
+
+      await pusher!.subscribe(channelName: 'private-chatify.$myUserId');
+      await pusher!.connect();
+
+      print('✅ Pusher connected');
+    } catch (e) {
+      print('❌ Error init Pusher: $e');
+    }
   }
 
   @override
   void dispose() {
+    _disconnectPusher();
+    _pollingTimer?.cancel();
     _messageController.dispose();
     _scrollController.dispose();
     super.dispose();
   }
 
-  void _loadMessages() {
+  void _disconnectPusher() {
+    try {
+      if (pusher != null) {
+        pusher!.unsubscribe(channelName: 'private-chatify.$myUserId');
+        pusher!.disconnect();
+        pusher = null; // ✅ Set null setelah disconnect
+        print('✅ Pusher disconnected');
+      }
+    } catch (e) {
+      print('❌ Error disconnecting Pusher: $e');
+    }
+  }
+
+  // void _loadMessages() {
+  //   setState(() {
+  //     isLoading = true;
+  //   });
+
+  Future<void> _loadMessages({bool silent = false}) async {
+    if (!silent) {
+      setState(() => isLoading = true);
+    }
+
+    final token = await AuthLocalStorage.getToken();
+    final user = await AuthLocalStorage.getUser();
+
+    if (token == null || user == null) return;
+
+    myUserId = user.id;
+
+    final data = await ChatifyRepository().fetchMessages(
+      token: token,
+      withUserId: widget.userId,
+    );
+
+    if (!mounted) return;
+
     setState(() {
-      isLoading = true;
+      messages =
+          data
+              .map<ChatMessageModel>(
+                (e) => ChatMessageModel.fromChatify(e, myUserId),
+              )
+              .toList();
+
+      if (!silent) isLoading = false;
     });
 
-    Future.delayed(const Duration(milliseconds: 500), () {
-      setState(() {
-        messages = ChatService.getMessages(widget.chatRoom.id);
-        isLoading = false;
-      });
-      _scrollToBottom();
-    });
+    _scrollToBottom();
+  }
+
+  Future<void> _sendMessage() async {
+    if (_messageController.text.trim().isEmpty) return;
+
+    final text = _messageController.text.trim();
+    _messageController.clear();
+
+    setState(() => isSending = true);
+
+    try {
+      final token = await AuthLocalStorage.getToken();
+
+      await ChatifyRepository().sendMessage(
+        token: token!,
+        toId: widget.userId,
+        message: text,
+      );
+
+      // 🔥 PENTING: jangan pakai loading
+      await _loadMessages(silent: true);
+    } catch (e) {
+      print('error $e');
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Gagal mengirim pesan')));
+      }
+    } finally {
+      if (mounted) {
+        setState(() => isSending = false);
+      }
+    }
   }
 
   void _scrollToBottom() {
@@ -55,45 +218,6 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
           curve: Curves.easeOut,
         );
       });
-    }
-  }
-
-  Future<void> _sendMessage() async {
-    if (_messageController.text.trim().isEmpty) return;
-
-    setState(() {
-      isSending = true;
-    });
-
-    final messageText = _messageController.text.trim();
-    _messageController.clear();
-
-    try {
-      final newMessage = await ChatService.sendMessage(
-        chatRoomId: widget.chatRoom.id,
-        senderId: widget.chatRoom.patientId,
-        senderName: widget.chatRoom.patientName,
-        senderRole: 'patient',
-        message: messageText,
-      );
-
-      setState(() {
-        messages.add(newMessage);
-        isSending = false;
-      });
-
-      _scrollToBottom();
-    } catch (e) {
-      setState(() {
-        isSending = false;
-      });
-      // Show error
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Gagal mengirim pesan'),
-          backgroundColor: Colors.red,
-        ),
-      );
     }
   }
 
@@ -156,20 +280,19 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
                 ),
                 child: const Icon(Icons.person, color: Colors.white, size: 24),
               ),
-              if (widget.chatRoom.isOnline)
-                Positioned(
-                  right: 0,
-                  bottom: 0,
-                  child: Container(
-                    width: 12,
-                    height: 12,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF4CAF50),
-                      shape: BoxShape.circle,
-                      border: Border.all(color: Colors.white, width: 2),
-                    ),
+              Positioned(
+                right: 0,
+                bottom: 0,
+                child: Container(
+                  width: 12,
+                  height: 12,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF4CAF50),
+                    shape: BoxShape.circle,
+                    border: Border.all(color: Colors.white, width: 2),
                   ),
                 ),
+              ),
             ],
           ),
           const SizedBox(width: 12),
@@ -178,7 +301,7 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  widget.chatRoom.doctorName,
+                  widget.userName,
                   style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
@@ -187,35 +310,35 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
-                const SizedBox(height: 2),
-                Row(
-                  children: [
-                    if (widget.chatRoom.isOnline) ...[
-                      Container(
-                        width: 6,
-                        height: 6,
-                        decoration: const BoxDecoration(
-                          color: Color(0xFF4CAF50),
-                          shape: BoxShape.circle,
-                        ),
-                      ),
-                      const SizedBox(width: 6),
-                    ],
-                    Flexible(
-                      child: Text(
-                        widget.chatRoom.isOnline
-                            ? 'Online'
-                            : widget.chatRoom.doctorSpecialty,
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.white.withOpacity(0.9),
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ],
-                ),
+                // const SizedBox(height: 2),
+                // Row(
+                //   children: [
+                //     if (widget.chatRoom.isOnline) ...[
+                //       Container(
+                //         width: 6,
+                //         height: 6,
+                //         decoration: const BoxDecoration(
+                //           color: Color(0xFF4CAF50),
+                //           shape: BoxShape.circle,
+                //         ),
+                //       ),
+                //       const SizedBox(width: 6),
+                //     ],
+                //     Flexible(
+                //       child: Text(
+                //         widget.chatRoom.isOnline
+                //             ? 'Online'
+                //             : widget.chatRoom.doctorSpecialty,
+                //         style: TextStyle(
+                //           fontSize: 12,
+                //           color: Colors.white.withOpacity(0.9),
+                //         ),
+                //         maxLines: 1,
+                //         overflow: TextOverflow.ellipsis,
+                //       ),
+                //     ),
+                //   ],
+                // ),
               ],
             ),
           ),
@@ -250,7 +373,7 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
       itemCount: messages.length,
       itemBuilder: (context, index) {
         final message = messages[index];
-        final isFromCurrentUser = message.senderRole == 'patient';
+        final isFromCurrentUser = message.isSender;
 
         // Check if we need to show date divider
         bool showDateDivider = false;

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:klinik/models/ChatModel.dart';
+import 'package:klinik/models/ChatMessageModel.dart';
 
 class ChatBubble extends StatelessWidget {
-  final ChatMessage message;
+  final ChatMessageModel message;
   final bool isFromCurrentUser;
 
   const ChatBubble({
@@ -63,7 +63,7 @@ class ChatBubble extends StatelessWidget {
                     ],
                   ),
                   child: Text(
-                    message.message,
+                    message.body,
                     style: TextStyle(
                       fontSize: 14,
                       color:
@@ -79,16 +79,16 @@ class ChatBubble extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
-                      message.formattedTime,
+                      message.formattedDate,
                       style: TextStyle(fontSize: 11, color: Colors.grey[500]),
                     ),
                     if (isFromCurrentUser) ...[
                       const SizedBox(width: 4),
                       Icon(
-                        message.isRead ? Icons.done_all : Icons.done,
+                        message.isSender ? Icons.done_all : Icons.done,
                         size: 14,
                         color:
-                            message.isRead
+                            message.isSender
                                 ? const Color(0xFF4A90E2)
                                 : Colors.grey[400],
                       ),

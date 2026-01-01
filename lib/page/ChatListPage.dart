@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:klinik/models/ChatModel.dart';
 import 'package:klinik/page/ChatRoomPage.dart';
-import 'package:klinik/service/ChatRepository.dart';
+import 'package:klinik/service/AuthLocalStorage.dart';
+import 'package:klinik/service/ChatifyRepository.dart';
 
 class ChatListPage extends StatefulWidget {
   const ChatListPage({Key? key}) : super(key: key);
@@ -29,18 +30,27 @@ class _ChatListPageState extends State<ChatListPage> {
     super.dispose();
   }
 
-  void _loadChatRooms() {
-    setState(() {
-      isLoading = true;
-    });
+  Future<void> _loadChatRooms() async {
+    setState(() => isLoading = true);
 
-    Future.delayed(const Duration(milliseconds: 500), () {
+    try {
+      final token = await AuthLocalStorage.getToken();
+      final data = await ChatifyRepository().getContacts(token!);
+
+      final rooms =
+          data.map<ChatRoom>((e) {
+            return ChatRoom.fromChatify(e);
+          }).toList();
+
       setState(() {
-        chatRooms = ChatService.getChatRooms();
-        filteredChatRooms = chatRooms;
+        chatRooms = rooms;
+        filteredChatRooms = rooms;
         isLoading = false;
       });
-    });
+    } catch (e) {
+      setState(() => isLoading = false);
+      debugPrint('CHAT LIST ERROR: $e');
+    }
   }
 
   void _filterChatRooms() {
@@ -51,7 +61,7 @@ class _ChatListPageState extends State<ChatListPage> {
       } else {
         filteredChatRooms =
             chatRooms.where((room) {
-              final lastMsg = room.lastMessage?.message ?? '';
+              final lastMsg = room.lastMessage ?? '';
               return room.doctorName.toLowerCase().contains(query) ||
                   room.doctorSpecialty.toLowerCase().contains(query) ||
                   lastMsg.toLowerCase().contains(query);
@@ -215,7 +225,11 @@ class _ChatListPageState extends State<ChatListPage> {
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) => ChatRoomPage(chatRoom: chatRoom),
+                builder:
+                    (_) => ChatRoomPage(
+                      userId: chatRoom.id, // 👈 dari Chatify
+                      userName: chatRoom.doctorName,
+                    ),
               ),
             );
           },
@@ -277,7 +291,7 @@ class _ChatListPageState extends State<ChatListPage> {
                             ),
                           ),
                           Text(
-                            chatRoom.formattedLastMessageTime,
+                            '',
                             style: TextStyle(
                               fontSize: 11,
                               color:
@@ -304,8 +318,7 @@ class _ChatListPageState extends State<ChatListPage> {
                         children: [
                           Expanded(
                             child: Text(
-                              chatRoom.lastMessage?.message ??
-                                  'Belum ada pesan',
+                              'Online',
                               style: TextStyle(
                                 fontSize: 13,
                                 color:
