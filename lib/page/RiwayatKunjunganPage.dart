@@ -23,8 +23,8 @@ class _RiwayatKunjunganPageState extends State<RiwayatKunjunganPage> {
   final List<Map<String, dynamic>> _filters = [
     {'label': 'Semua', 'status': null},
     {'label': 'Selesai', 'status': 'completed'},
-    {'label': 'Menunggu', 'status': 'menunggu'},
-    {'label': 'Dibatalkan', 'status': 'dibatalkan'},
+    {'label': 'Menunggu', 'status': 'scheduled'},
+    {'label': 'Dibatalkan', 'status': 'cancelled'},
   ];
 
   @override

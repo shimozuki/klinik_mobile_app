@@ -24,7 +24,7 @@ class _RiwayatKunjunganContentState extends State<RiwayatKunjunganContent> {
   final List<Map<String, dynamic>> _filters = [
     {'label': 'Semua', 'status': null},
     {'label': 'Selesai', 'status': 'completed'},
-    {'label': 'Terjadwal', 'status': 'scheduled'},
+    {'label': 'Menunggu', 'status': 'scheduled'},
     {'label': 'Dibatalkan', 'status': 'cancelled'},
   ];
 

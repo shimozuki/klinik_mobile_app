@@ -239,7 +239,7 @@ class _AppointmentPageState extends State<AppointmentPage>
           filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
           child: Row(
             children: [
-              _buildTabItem('Mendatang', 0),
+              _buildTabItem('Menunggu', 0),
               _buildTabItem('Selesai', 1),
               _buildTabItem('Dibatalkan', 2),
             ],
@@ -599,40 +599,40 @@ class AppointmentCard extends StatelessWidget {
               ),
               child: Row(
                 children: [
-                  Expanded(
-                    child: Material(
-                      color: Colors.transparent,
-                      child: InkWell(
-                        onTap: () {},
-                        borderRadius: const BorderRadius.only(
-                          bottomLeft: Radius.circular(20),
-                        ),
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 18),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                Icons.chat_bubble_rounded,
-                                size: 20,
-                                color: const Color(0xFF4A90E2),
-                              ),
-                              const SizedBox(width: 8),
-                              const Text(
-                                'Chat',
-                                style: TextStyle(
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.w600,
-                                  color: Color(0xFF4A90E2),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                  Container(width: 1, height: 50, color: Colors.grey[100]),
+                  // Expanded(
+                  //   child: Material(
+                  //     color: Colors.transparent,
+                  //     child: InkWell(
+                  //       onTap: () {},
+                  //       borderRadius: const BorderRadius.only(
+                  //         bottomLeft: Radius.circular(20),
+                  //       ),
+                  //       child: Padding(
+                  //         padding: const EdgeInsets.symmetric(vertical: 18),
+                  //         child: Row(
+                  //           mainAxisAlignment: MainAxisAlignment.center,
+                  //           children: [
+                  //             Icon(
+                  //               Icons.chat_bubble_rounded,
+                  //               size: 20,
+                  //               color: const Color(0xFF4A90E2),
+                  //             ),
+                  //             const SizedBox(width: 8),
+                  //             const Text(
+                  //               'Chat',
+                  //               style: TextStyle(
+                  //                 fontSize: 15,
+                  //                 fontWeight: FontWeight.w600,
+                  //                 color: Color(0xFF4A90E2),
+                  //               ),
+                  //             ),
+                  //           ],
+                  //         ),
+                  //       ),
+                  //     ),
+                  //   ),
+                  // ),
+                  // Container(width: 1, height: 50, color: Colors.grey[100]),
                   Expanded(
                     child: Material(
                       color: Colors.transparent,

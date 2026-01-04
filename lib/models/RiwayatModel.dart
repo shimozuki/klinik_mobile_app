@@ -88,14 +88,24 @@ class DentalVisit {
       id: json['id'].toString(),
       patientName: json['patientName'] ?? '',
       patientId: json['patientId'] ?? '',
-      visitDate: DateTime.parse(json['visitDate']),
+
+      // ❌ INI SUMBER ERROR SEBELUMNYA
+      // visitDate: DateTime.parse(json['visitDate']),
+
+      // ✅ FIX AMAN (WAJIB)
+      visitDate:
+          json['visitDate'] != null
+              ? DateTime.parse(json['visitDate'])
+              : json['nextAppointment'] != null
+              ? DateTime.parse(json['nextAppointment'])
+              : DateTime.now(),
+
       visitTime: json['visitTime'] ?? '-',
       treatmentType: json['treatmentType'] ?? 'Konsultasi',
       diagnosis: json['diagnosis'] ?? '',
       treatment: json['treatment'] ?? '',
       notes: json['notes'] ?? '',
 
-      // 🔥 SAFE CASTING
       treatmentCost:
           double.tryParse(json['treatmentCost']?.toString() ?? '0') ?? 0.0,
 

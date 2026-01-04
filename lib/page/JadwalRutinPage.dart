@@ -82,7 +82,7 @@ class _JadwalPraktikPageState extends State<JadwalPraktikPage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Booking Terjadwal',
+                      'Booking Menunggu',
                       style: TextStyle(
                         fontSize: 24,
                         fontWeight: FontWeight.bold,

@@ -183,7 +183,7 @@ class VisitFilterChips extends StatelessWidget {
         return Icons.grid_view_rounded;
       case 'Selesai':
         return Icons.check_circle_rounded;
-      case 'Terjadwal':
+      case 'Menunggu':
         return Icons.schedule_rounded;
       case 'Dibatalkan':
         return Icons.cancel_rounded;
@@ -277,7 +277,7 @@ class PatientStatisticsCard extends StatelessWidget {
               ),
               Expanded(
                 child: _buildStatItem(
-                  'Terjadwal',
+                  'Menunggu',
                   '$scheduledVisits',
                   Icons.schedule_rounded,
                 ),
@@ -577,7 +577,7 @@ class PatientVisitCard extends StatelessWidget {
       case 'scheduled':
         bgColor = const Color(0xFFE3F2FD);
         textColor = const Color(0xFF2196F3);
-        text = 'Terjadwal';
+        text = 'Menunggu';
         icon = Icons.schedule_rounded;
         break;
       default:

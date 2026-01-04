@@ -413,13 +413,13 @@ class RiwayatDetailModal extends StatelessWidget {
       case 'scheduled':
         bgColor = const Color(0xFFE3F2FD);
         textColor = const Color(0xFF2196F3);
-        text = 'Terjadwal';
+        text = 'Menunggu';
         icon = Icons.schedule_rounded;
         break;
       default:
         bgColor = const Color(0xFFF5F5F5);
         textColor = const Color(0xFF9E9E9E);
-        text = 'Unknown';
+        text = 'Menunggu';
         icon = Icons.help_rounded;
     }
 
