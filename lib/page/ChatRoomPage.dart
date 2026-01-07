@@ -197,11 +197,11 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
       await _loadMessages(silent: true);
     } catch (e) {
       print('error $e');
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('Gagal mengirim pesan')));
-      }
+      // if (mounted) {
+      //   ScaffoldMessenger.of(
+      //     context,
+      //   ).showSnackBar(const SnackBar(content: Text('Gagal mengirim pesan')));
+      // }
     } finally {
       if (mounted) {
         setState(() => isSending = false);
