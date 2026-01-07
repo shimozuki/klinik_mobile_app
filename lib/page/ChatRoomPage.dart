@@ -342,13 +342,13 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
               ],
             ),
           ),
-          IconButton(
-            onPressed: () {
-              // Show options menu
-              _showOptionsMenu();
-            },
-            icon: const Icon(Icons.more_vert, color: Colors.white),
-          ),
+          // IconButton(
+          //   onPressed: () {
+          //     // Show options menu
+          //     _showOptionsMenu();
+          //   },
+          //   icon: const Icon(Icons.more_vert, color: Colors.white),
+          // ),
         ],
       ),
     );
