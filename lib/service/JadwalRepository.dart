@@ -28,4 +28,19 @@ class JadwalDokterRepository {
     final data = await getJadwalDokter(token);
     return data.where((e) => e.hari == hari).toList();
   }
+
+  Future<List<DoctorSchedule>> getJadwalPublik() async {
+    final response = await http.get(
+      Uri.parse('$_baseUrl/jadwal-publik'),
+      headers: {'Accept': 'application/json'},
+    );
+
+    if (response.statusCode == 200) {
+      final json = jsonDecode(response.body);
+      final List list = json['data'];
+      return list.map((e) => DoctorSchedule.fromJson(e)).toList();
+    } else {
+      throw Exception('Gagal mengambil jadwal dokter publik');
+    }
+  }
 }

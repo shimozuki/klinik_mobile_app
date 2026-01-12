@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:klinik/models/UserModel.dart';
+import 'package:klinik/page/LandingPage.dart';
 import 'package:klinik/page/LoginPage.dart';
 import 'package:klinik/page/HomePage.dart';
 import 'package:klinik/service/AuthLocalStorage.dart';
@@ -26,7 +27,7 @@ class _AuthGateState extends State<AuthGate> {
     if (auth == null) {
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (_) => LoginPage()),
+        MaterialPageRoute(builder: (_) => PublicLandingPage()),
       );
     } else {
       Navigator.pushReplacement(
