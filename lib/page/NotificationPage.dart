@@ -20,15 +20,21 @@ class _NotificationPageState extends State<NotificationPage> {
     _loadNotifications();
   }
 
-  void _loadNotifications() {
+  void _loadNotifications() async {
     setState(() => _isLoading = true);
 
-    Future.delayed(const Duration(milliseconds: 300), () {
+    try {
+      final data = await _repository.fetchNotifications();
       setState(() {
-        _notifications = _repository.getAllNotifications();
-        _isLoading = false;
+        _notifications = data;
       });
-    });
+    } catch (e) {
+      debugPrint('Error load notif: $e');
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
   }
 
   @override
@@ -104,21 +110,19 @@ class _NotificationPageState extends State<NotificationPage> {
                       ),
                     ],
                   ),
-                  Row(
-                    children: [
-                      _buildHeaderAction(
-                        icon: Icons.done_all_rounded,
-                        onTap: () {
-                          setState(() {
-                            _repository.markAllAsRead();
-                            _notifications = _repository.getAllNotifications();
-                          });
-                        },
-                      ),
-                      const SizedBox(width: 12),
-                      _buildHeaderAction(icon: Icons.notifications_rounded),
-                    ],
-                  ),
+                  // Row(
+                  //   children: [
+                  //     _buildHeaderAction(
+                  //       icon: Icons.done_all_rounded,
+                  //       onTap: () async {
+                  //         await _repository.markAllAsRead();
+                  //         _loadNotifications();
+                  //       },
+                  //     ),
+                  //     const SizedBox(width: 12),
+                  //     _buildHeaderAction(icon: Icons.notifications_rounded),
+                  //   ],
+                  // ),
                 ],
               ),
             ],
@@ -152,11 +156,9 @@ class _NotificationPageState extends State<NotificationPage> {
     return Dismissible(
       key: ValueKey(notification.id),
       direction: DismissDirection.endToStart,
-      onDismissed: (_) {
-        setState(() {
-          _repository.deleteNotification(notification.id);
-          _notifications = _repository.getAllNotifications();
-        });
+      onDismissed: (_) async {
+        await _repository.deleteNotification(notification.id);
+        _loadNotifications();
       },
       background: Container(
         alignment: Alignment.centerRight,
@@ -183,12 +185,10 @@ class _NotificationPageState extends State<NotificationPage> {
         ),
         child: InkWell(
           borderRadius: BorderRadius.circular(14),
-          onTap: () {
+          onTap: () async {
             if (!notification.isRead) {
-              setState(() {
-                _repository.markAsRead(notification.id);
-                _notifications = _repository.getAllNotifications();
-              });
+              await _repository.markAsRead(notification.id);
+              _loadNotifications();
             }
           },
           child: Padding(
@@ -267,7 +267,7 @@ class _NotificationPageState extends State<NotificationPage> {
         return Icons.folder_open_rounded;
       case NotificationType.payment:
         return Icons.payment_rounded;
-      case NotificationType.system:
+      case NotificationType.other:
         return Icons.settings_rounded;
     }
   }
@@ -282,7 +282,7 @@ class _NotificationPageState extends State<NotificationPage> {
         return const Color(0xFF4CAF50);
       case NotificationType.payment:
         return const Color(0xFF9C27B0);
-      case NotificationType.system:
+      case NotificationType.other:
         return const Color(0xFF607D8B);
     }
   }

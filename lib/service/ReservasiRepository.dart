@@ -45,7 +45,7 @@ class ReservasiRepository {
 
     if (response.statusCode != 201) {
       final data = jsonDecode(response.body);
-      throw Exception(data['message'] ?? 'Gagal membuat reservasi');
+      throw Exception(data['error']);
     }
   }
 }

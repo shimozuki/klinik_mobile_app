@@ -1,85 +1,106 @@
+import 'dart:convert';
+import 'package:flutter/foundation.dart';
+import 'package:http/http.dart' as http;
+import 'package:klinik/config/ApiConfig.dart';
 import 'package:klinik/models/NotificationModel.dart';
+import 'package:klinik/service/AuthLocalStorage.dart';
 
 class NotificationRepository {
-  // Singleton
+  // ================= SINGLETON =================
   static final NotificationRepository _instance =
       NotificationRepository._internal();
   factory NotificationRepository() => _instance;
   NotificationRepository._internal();
 
-  final List<AppNotification> _notifications = [
-    AppNotification(
-      id: 'N001',
-      title: 'Booking Berhasil',
-      message:
-          'Janji temu Anda dengan drg. Amanda Rodriguez telah dikonfirmasi.',
-      createdAt: DateTime.now().subtract(const Duration(minutes: 10)),
-      type: NotificationType.booking,
-      isRead: false,
-    ),
-    AppNotification(
-      id: 'N002',
-      title: 'Pengingat Jadwal',
-      message: 'Anda memiliki jadwal pemeriksaan hari ini pukul 10:00 WIB.',
-      createdAt: DateTime.now().subtract(const Duration(hours: 1)),
-      type: NotificationType.reminder,
-      isRead: false,
-    ),
-    AppNotification(
-      id: 'N003',
-      title: 'Rekam Medis Tersedia',
-      message: 'Rekam medis dari kunjungan terakhir Anda sudah dapat dilihat.',
-      createdAt: DateTime.now().subtract(const Duration(days: 1)),
-      type: NotificationType.medicalRecord,
-      isRead: true,
-    ),
-    AppNotification(
-      id: 'N004',
-      title: 'Pembayaran Berhasil',
-      message: 'Pembayaran sebesar Rp 450.000 telah berhasil.',
-      createdAt: DateTime.now().subtract(const Duration(days: 2)),
-      type: NotificationType.payment,
-      isRead: true,
-    ),
-  ];
+  // ================= CONFIG =================
+  final String _baseUrl = ApiConfig.baseUrl;
 
-  /// Ambil semua notifikasi
-  List<AppNotification> getAllNotifications() {
-    return List.from(_notifications);
+  // ================= STATE =================
+  final ValueNotifier<int> unreadCountNotifier = ValueNotifier<int>(0);
+  final ValueNotifier<bool> isLoadingNotifier = ValueNotifier<bool>(false);
+
+  List<AppNotification> _notifications = [];
+
+  // ================= FETCH =================
+  Future<List<AppNotification>> fetchNotifications() async {
+    final token = await AuthLocalStorage.getToken();
+    if (token == null) return [];
+
+    isLoadingNotifier.value = true;
+
+    try {
+      final res = await http.get(
+        Uri.parse('$_baseUrl/notifications'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Accept': 'application/json',
+        },
+      );
+
+      if (res.statusCode != 200) {
+        throw Exception('Gagal mengambil notifikasi');
+      }
+
+      final List data = json.decode(res.body);
+
+      _notifications = data.map((e) => AppNotification.fromApi(e)).toList();
+
+      // 🔥 KUNCI REALTIME
+      unreadCountNotifier.value = _notifications.where((n) => !n.isRead).length;
+
+      return List.from(_notifications);
+    } finally {
+      isLoadingNotifier.value = false;
+    }
   }
 
-  /// Ambil notifikasi belum dibaca
-  List<AppNotification> getUnreadNotifications() {
-    return _notifications.where((n) => !n.isRead).toList();
-  }
+  // ================= GETTERS =================
+  List<AppNotification> getAllNotifications() =>
+      List.unmodifiable(_notifications);
 
-  /// Tandai satu notifikasi sebagai dibaca
-  void markAsRead(String id) {
+  List<AppNotification> getUnreadNotifications() =>
+      _notifications.where((n) => !n.isRead).toList();
+
+  int getUnreadCount() => unreadCountNotifier.value;
+
+  // ================= ACTIONS =================
+  Future<void> markAsRead(String id) async {
+    final token = await AuthLocalStorage.getToken();
+    if (token == null) return;
+
+    await http.put(
+      Uri.parse('$_baseUrl/notifications/$id/read'),
+      headers: {'Authorization': 'Bearer $token', 'Accept': 'application/json'},
+    );
+
     final index = _notifications.indexWhere((n) => n.id == id);
-    if (index != -1) {
+    if (index != -1 && !_notifications[index].isRead) {
       _notifications[index].isRead = true;
+
+      // 🔥 update badge
+      unreadCountNotifier.value = _notifications.where((n) => !n.isRead).length;
     }
   }
 
-  /// Tandai semua sebagai dibaca
-  void markAllAsRead() {
-    for (final n in _notifications) {
-      n.isRead = true;
+  Future<void> markAllAsRead() async {
+    for (final n in _notifications.where((n) => !n.isRead)) {
+      await markAsRead(n.id);
     }
+
+    unreadCountNotifier.value = 0;
   }
 
-  /// Tambah notifikasi baru
-  void addNotification(AppNotification notification) {
-    _notifications.insert(0, notification);
-  }
+  Future<void> deleteNotification(String id) async {
+    final token = await AuthLocalStorage.getToken();
+    if (token == null) return;
 
-  /// Hapus notifikasi
-  void deleteNotification(String id) {
+    await http.delete(
+      Uri.parse('$_baseUrl/notifications/$id'),
+      headers: {'Authorization': 'Bearer $token', 'Accept': 'application/json'},
+    );
+
     _notifications.removeWhere((n) => n.id == id);
-  }
 
-  /// Total unread
-  int getUnreadCount() {
-    return _notifications.where((n) => !n.isRead).length;
+    unreadCountNotifier.value = _notifications.where((n) => !n.isRead).length;
   }
 }

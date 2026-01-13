@@ -297,7 +297,12 @@ class _AppointmentPageState extends State<AppointmentPage>
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => const BookingBottomSheet(),
+      builder:
+          (context) => BookingBottomSheet(
+            onBookingSuccess: () {
+              _loadReservasi();
+            },
+          ),
     );
   }
 }

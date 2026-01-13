@@ -7,7 +7,8 @@ import 'package:klinik/models/JadwalModel.dart';
 import 'package:klinik/models/LayananOption.dart';
 
 class BookingBottomSheet extends StatefulWidget {
-  const BookingBottomSheet({Key? key}) : super(key: key);
+  final VoidCallback? onBookingSuccess;
+  const BookingBottomSheet({Key? key, this.onBookingSuccess}) : super(key: key);
 
   @override
   State<BookingBottomSheet> createState() => _BookingBottomSheetState();
@@ -222,10 +223,12 @@ class _BookingBottomSheetState extends State<BookingBottomSheet> {
         layananId: selectedServiceId!,
       );
 
-      print(token);
+      // await _loadData();
 
       if (!mounted) return;
-      Navigator.pop(context);
+
+      widget.onBookingSuccess?.call();
+      Navigator.pop(context, true);
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(

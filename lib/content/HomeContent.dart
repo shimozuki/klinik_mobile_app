@@ -1,9 +1,12 @@
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:klinik/models/UserModel.dart';
 import 'package:klinik/models/JadwalModel.dart';
 import 'package:klinik/models/ReservasiModel.dart';
 import 'package:klinik/page/ListRekamMedis.dart';
+import 'package:klinik/page/NotificationPage.dart';
 import 'package:klinik/service/JadwalRepository.dart';
+import 'package:klinik/service/NotificationRepository.dart';
 import 'package:klinik/service/ReservasiRepository.dart';
 import 'package:klinik/page/JadwalPage.dart';
 import 'package:klinik/page/RekamMedisPage.dart';
@@ -35,6 +38,15 @@ class _HomeContentState extends State<HomeContent> {
     super.initState();
     _loadSchedules();
     _loadReservasi();
+
+    NotificationRepository().fetchNotifications();
+
+    FirebaseMessaging.onMessage.listen((RemoteMessage message) async {
+      debugPrint('FCM received in foreground');
+
+      // 🔄 ambil ulang notifikasi dari API
+      await NotificationRepository().fetchNotifications();
+    });
   }
 
   Future<void> _loadSchedules() async {
@@ -123,16 +135,50 @@ class _HomeContentState extends State<HomeContent> {
                   ),
                 ],
               ),
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: const Icon(
-                  Icons.notifications_outlined,
-                  color: Colors.white,
-                ),
+              ValueListenableBuilder<int>(
+                valueListenable: NotificationRepository().unreadCountNotifier,
+                builder: (context, unread, _) {
+                  return Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      InkWell(
+                        borderRadius: BorderRadius.circular(12),
+                        onTap: () async {
+                          await Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const NotificationPage(),
+                            ),
+                          );
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.2),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: const Icon(
+                            Icons.notifications_outlined,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                      if (unread > 0)
+                        Positioned(
+                          top: -2,
+                          right: -2,
+                          child: Container(
+                            width: 10,
+                            height: 10,
+                            decoration: const BoxDecoration(
+                              color: Colors.red,
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                        ),
+                    ],
+                  );
+                },
               ),
             ],
           ),
