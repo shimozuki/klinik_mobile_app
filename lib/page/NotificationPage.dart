@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:klinik/models/NotificationModel.dart';
+import 'package:klinik/page/AppointmentPage.dart';
 import 'package:klinik/service/NotificationRepository.dart';
 
 class NotificationPage extends StatefulWidget {
@@ -189,6 +190,12 @@ class _NotificationPageState extends State<NotificationPage> {
             if (!notification.isRead) {
               await _repository.markAsRead(notification.id);
               _loadNotifications();
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const AppointmentPage(),
+                ),
+              );
             }
           },
           child: Padding(
