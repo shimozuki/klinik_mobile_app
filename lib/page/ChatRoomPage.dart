@@ -9,6 +9,8 @@ import 'package:klinik/models/ChatModel.dart';
 import 'package:klinik/service/AuthLocalStorage.dart';
 import 'package:klinik/service/ChatifyRepository.dart';
 import 'package:pusher_channels_flutter/pusher_channels_flutter.dart';
+import 'dart:io';
+import 'package:image_picker/image_picker.dart';
 
 class ChatRoomPage extends StatefulWidget {
   final int userId;
@@ -113,6 +115,35 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
       print('✅ Pusher connected');
     } catch (e) {
       print('❌ Error init Pusher: $e');
+    }
+  }
+
+  Future<void> _pickImage() async {
+    final picker = ImagePicker();
+    final picked = await picker.pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 80,
+    );
+
+    if (picked == null) return;
+
+    final token = await AuthLocalStorage.getToken();
+    if (token == null) return;
+
+    setState(() => isSending = true);
+
+    try {
+      await ChatifyRepository().sendImage(
+        token: token,
+        toId: widget.userId,
+        image: File(picked.path),
+      );
+
+      await _loadMessages(silent: true);
+    } catch (e) {
+      debugPrint('UPLOAD ERROR: $e');
+    } finally {
+      if (mounted) setState(() => isSending = false);
     }
   }
 
@@ -475,9 +506,7 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
                     ),
                   ),
                   IconButton(
-                    onPressed: () {
-                      // Attach file
-                    },
+                    onPressed: isSending ? null : _pickImage,
                     icon: const Icon(
                       Icons.attach_file_rounded,
                       color: Color(0xFF95A5A6),

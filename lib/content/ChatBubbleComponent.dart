@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:klinik/content/fullscreen_image_page.dart';
 import 'package:klinik/models/ChatMessageModel.dart';
 
 class ChatBubble extends StatelessWidget {
@@ -20,14 +21,6 @@ class ChatBubble extends StatelessWidget {
             isFromCurrentUser ? MainAxisAlignment.end : MainAxisAlignment.start,
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
-          if (!isFromCurrentUser) ...[
-            CircleAvatar(
-              radius: 16,
-              backgroundColor: const Color(0xFF667EEA),
-              child: const Icon(Icons.person, size: 18, color: Colors.white),
-            ),
-            const SizedBox(width: 8),
-          ],
           Flexible(
             child: Column(
               crossAxisAlignment:
@@ -36,10 +29,13 @@ class ChatBubble extends StatelessWidget {
                       : CrossAxisAlignment.start,
               children: [
                 Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 12,
-                  ),
+                  padding:
+                      message.type == 'image'
+                          ? const EdgeInsets.all(6)
+                          : const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 12,
+                          ),
                   decoration: BoxDecoration(
                     gradient:
                         isFromCurrentUser
@@ -48,108 +44,57 @@ class ChatBubble extends StatelessWidget {
                             )
                             : null,
                     color: isFromCurrentUser ? null : Colors.white,
-                    borderRadius: BorderRadius.only(
-                      topLeft: const Radius.circular(16),
-                      topRight: const Radius.circular(16),
-                      bottomLeft: Radius.circular(isFromCurrentUser ? 16 : 4),
-                      bottomRight: Radius.circular(isFromCurrentUser ? 4 : 16),
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.05),
-                        blurRadius: 5,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
+                    borderRadius: BorderRadius.circular(16),
                   ),
-                  child: _buildMessageContent(), // ✅ AMAN
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  message.formattedDate,
-                  style: TextStyle(fontSize: 11, color: Colors.grey[500]),
+                  child: _buildMessageContent(context), // ✅ FIX
                 ),
               ],
             ),
           ),
-          if (isFromCurrentUser) ...[
-            const SizedBox(width: 8),
-            CircleAvatar(
-              radius: 16,
-              backgroundColor: const Color(0xFF4CAF50),
-              child: const Icon(Icons.person, size: 18, color: Colors.white),
-            ),
-          ],
         ],
       ),
     );
   }
 
-  // =====================================================
-  // 🔥 MESSAGE CONTENT (TEXT / IMAGE + CAPTION)
-  // =====================================================
-  Widget _buildMessageContent() {
-    // 🖼 IMAGE MESSAGE
+  // ======================================================
+  // MESSAGE CONTENT (TEXT / IMAGE)
+  // ======================================================
+  Widget _buildMessageContent(BuildContext context) {
+    // IMAGE
     if (message.type == 'image' && message.attachment != null) {
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          ClipRRect(
-            borderRadius: BorderRadius.circular(12),
-            child: Image.network(
-              message.attachment!.url,
-              width: 220,
-              fit: BoxFit.cover,
-              loadingBuilder: (context, child, progress) {
-                if (progress == null) return child;
-                return const SizedBox(
-                  width: 220,
-                  height: 160,
-                  child: Center(
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  ),
-                );
-              },
-              errorBuilder: (_, __, ___) {
-                return const SizedBox(
-                  width: 220,
-                  height: 160,
-                  child: Center(
-                    child: Icon(
-                      Icons.broken_image,
-                      size: 40,
-                      color: Colors.grey,
-                    ),
-                  ),
-                );
-              },
+      return GestureDetector(
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder:
+                  (_) => FullscreenImagePage(imageUrl: message.attachment!.url),
             ),
+          );
+        },
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(12),
+          child: Image.network(
+            message.attachment!.url,
+            width: 220,
+            fit: BoxFit.cover,
+            errorBuilder:
+                (_, __, ___) => const SizedBox(
+                  width: 220,
+                  height: 160,
+                  child: Icon(Icons.broken_image, size: 40),
+                ),
           ),
-
-          // ✍️ CAPTION (TEXT DI BAWAH GAMBAR)
-          if (message.body.isNotEmpty) ...[
-            const SizedBox(height: 8),
-            Text(
-              message.body,
-              style: TextStyle(
-                fontSize: 14,
-                color:
-                    isFromCurrentUser ? Colors.white : const Color(0xFF2C3E50),
-                height: 1.4,
-              ),
-            ),
-          ],
-        ],
+        ),
       );
     }
 
-    // 💬 DEFAULT TEXT MESSAGE
+    // TEXT
     return Text(
       message.body,
       style: TextStyle(
+        color: isFromCurrentUser ? Colors.white : Colors.black87,
         fontSize: 14,
-        color: isFromCurrentUser ? Colors.white : const Color(0xFF2C3E50),
-        height: 1.4,
       ),
     );
   }
