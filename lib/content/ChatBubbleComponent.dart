@@ -62,38 +62,12 @@ class ChatBubble extends StatelessWidget {
                       ),
                     ],
                   ),
-                  child: Text(
-                    message.body,
-                    style: TextStyle(
-                      fontSize: 14,
-                      color:
-                          isFromCurrentUser
-                              ? Colors.white
-                              : const Color(0xFF2C3E50),
-                      height: 1.4,
-                    ),
-                  ),
+                  child: _buildMessageContent(), // ✅ AMAN
                 ),
                 const SizedBox(height: 4),
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      message.formattedDate,
-                      style: TextStyle(fontSize: 11, color: Colors.grey[500]),
-                    ),
-                    if (isFromCurrentUser) ...[
-                      const SizedBox(width: 4),
-                      Icon(
-                        message.isSender ? Icons.done_all : Icons.done,
-                        size: 14,
-                        color:
-                            message.isSender
-                                ? const Color(0xFF4A90E2)
-                                : Colors.grey[400],
-                      ),
-                    ],
-                  ],
+                Text(
+                  message.formattedDate,
+                  style: TextStyle(fontSize: 11, color: Colors.grey[500]),
                 ),
               ],
             ),
@@ -107,6 +81,75 @@ class ChatBubble extends StatelessWidget {
             ),
           ],
         ],
+      ),
+    );
+  }
+
+  // =====================================================
+  // 🔥 MESSAGE CONTENT (TEXT / IMAGE + CAPTION)
+  // =====================================================
+  Widget _buildMessageContent() {
+    // 🖼 IMAGE MESSAGE
+    if (message.type == 'image' && message.attachment != null) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: Image.network(
+              message.attachment!.url,
+              width: 220,
+              fit: BoxFit.cover,
+              loadingBuilder: (context, child, progress) {
+                if (progress == null) return child;
+                return const SizedBox(
+                  width: 220,
+                  height: 160,
+                  child: Center(
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
+                );
+              },
+              errorBuilder: (_, __, ___) {
+                return const SizedBox(
+                  width: 220,
+                  height: 160,
+                  child: Center(
+                    child: Icon(
+                      Icons.broken_image,
+                      size: 40,
+                      color: Colors.grey,
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+
+          // ✍️ CAPTION (TEXT DI BAWAH GAMBAR)
+          if (message.body.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            Text(
+              message.body,
+              style: TextStyle(
+                fontSize: 14,
+                color:
+                    isFromCurrentUser ? Colors.white : const Color(0xFF2C3E50),
+                height: 1.4,
+              ),
+            ),
+          ],
+        ],
+      );
+    }
+
+    // 💬 DEFAULT TEXT MESSAGE
+    return Text(
+      message.body,
+      style: TextStyle(
+        fontSize: 14,
+        color: isFromCurrentUser ? Colors.white : const Color(0xFF2C3E50),
+        height: 1.4,
       ),
     );
   }

@@ -3,8 +3,8 @@ import 'package:http/http.dart' as http;
 import 'package:klinik/config/ApiConfig.dart';
 
 class ChatifyRepository {
-  final String baseUrl = 'http://192.168.1.5:8000/api';
-  final String _baseUrl = 'http://192.168.1.5:8000/chatify/api';
+  final String baseUrl = 'http://192.168.41.118:8000/api';
+  final String _baseUrl = 'http://192.168.41.118:8000/chatify/api';
 
   Map<String, String> _headers(String token) => {
     'Accept': 'application/json',
@@ -19,11 +19,7 @@ class ChatifyRepository {
     final response = await http.post(
       Uri.parse('$_baseUrl/sendMessage'),
       headers: _headers(token),
-      body: {
-        'id': toId.toString(), // ✅ WAJIB "id"
-        'type': 'user', // ✅ WAJIB
-        'message': message, // ✅ WAJIB "message"
-      },
+      body: {'id': toId.toString(), 'type': 'user', 'message': message},
     );
 
     if (response.statusCode != 200) {
@@ -35,18 +31,26 @@ class ChatifyRepository {
     required String token,
     required int withUserId,
   }) async {
-    final response = await http.post(
-      Uri.parse('$baseUrl/fetchMessagesMobile'),
-      headers: {'Authorization': 'Bearer $token', 'Accept': 'application/json'},
-      body: {'id': withUserId.toString()},
-    );
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/fetchMessagesMobile'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Accept': 'application/json',
+        },
+        body: {'id': withUserId.toString()},
+      );
 
-    if (response.statusCode == 200) {
-      final body = jsonDecode(response.body);
-      print('message $body');
-      return body['messages'] as List<dynamic>;
-    } else {
-      throw jsonDecode(response.body);
+      if (response.statusCode == 200) {
+        final body = jsonDecode(response.body);
+        print('message $body');
+        return body['messages'] as List<dynamic>;
+      } else {
+        throw Exception(jsonDecode(response.body)['message'] ?? 'Server error');
+      }
+    } catch (e) {
+      print('fetchMessages error: $e');
+      rethrow;
     }
   }
 
